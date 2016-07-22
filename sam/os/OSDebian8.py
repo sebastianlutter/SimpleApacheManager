@@ -16,7 +16,7 @@ class OSDebian8(IOperationSystem):
 
 
     def check(self):
-        pass
+        return 0
 
 
     def process(self,job):

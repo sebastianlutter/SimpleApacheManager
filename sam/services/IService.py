@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 __author__ = 'Sebastian Lutter'
-#
-# Abstract service class. A service responsible of doing some operation.
-# It only provides operations for a given task.
-#
 
+"""
+ Abstract service class. A service is responsible of doing some operation.
+ It only provides operations for a given task. Unlike Action classes this
+ are low level functions.
+"""
 from abc import ABC, abstractmethod
 
 class IService(ABC):
@@ -20,10 +21,6 @@ class IService(ABC):
 
     @abstractmethod
     def check(self):
-        pass
-
-    @abstractmethod
-    def process(self, job):
         pass
 
     @abstractmethod

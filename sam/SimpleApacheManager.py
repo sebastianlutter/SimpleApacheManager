@@ -14,6 +14,7 @@ from sam.os.OSDebian8 import OSDebian8
 from sam.os.OSUbuntu1604 import OSUbuntu1604
 from sam.actions.DomainActions import DomainActions
 from sam.actions.SystemActions import SystemActions
+from sam.actions.UserActions import UserActions
 from pprint import pprint
 
 class SimpleApacheManager():
@@ -29,7 +30,7 @@ class SimpleApacheManager():
         self.os_services = [OSDebian8(), OSUbuntu1604()]
         self.services = [ApacheService()]
         # init all action classes
-        self.actions = [DomainActions(), SystemActions()]
+        self.actions = [DomainActions(), SystemActions(),UserActions()]
         # parse command line args
         self.args=self.parseParameters()
         # do what is needed
@@ -37,6 +38,7 @@ class SimpleApacheManager():
 
     """
     Actually do the work needed. Read params and call the according actions
+    :return Exit code 0 if success, else value > 0
     """
     def execute(self,args):
         pprint(args)
@@ -44,6 +46,9 @@ class SimpleApacheManager():
         for action in self.actions:
             if action.getName() == args.command:
                 action.process(args)
+                return
+            elif args.command == 'check':
+                self.check()
                 return
         raise Exception("Command "+args.command+" cannot be processed. No module that handle it found.")
 
@@ -63,6 +68,8 @@ class SimpleApacheManager():
         # subparsers for second argument
         subparsers = parser.add_subparsers(dest = 'command', title='sub command help', help = 'available subcommands')
         subparsers.required=True
+        # add global check parameter
+        check_parser = subparsers.add_parser("check",help='Check environment and all service and OS modules.')
         # let each action class add its parameter to the parser
         for action in self.actions:
             action.addParserArgs(subparsers)
@@ -79,12 +86,14 @@ class SimpleApacheManager():
     """
     def check(self):
         # run all os checks
-        print("\nOS modules:")
+        print("\ncheck OS modules:")
         for os_service in self.os_services:
-            print(os_service.name() + " -> " + os_service.info())
-        print("\nService modules:")
+            print('  '+os_service.name() + "\t: " + os_service.info())
+        print("\ncheck service modules:")
         for service in self.services:
-            print(service.name() + " -> " + service.info())
+            print('  '+service.name() + "\t: " + service.info())
+        print()
+
     '''
     Print example usage strings (from subparsers)
     '''
@@ -93,7 +102,7 @@ class SimpleApacheManager():
         for action in self.actions:
             for example in action.getExampleUsage():
                 print(example)
-        print()
+        print(' $ {:<45s} : {}'.format('sam check ','Check environment and all service and OS modules.'+'\n'))
 
 
 # programm entry point
