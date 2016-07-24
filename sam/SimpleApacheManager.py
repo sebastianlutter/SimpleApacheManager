@@ -12,9 +12,9 @@ import argparse
 from sam.services.ApacheService import ApacheService
 from sam.os.OSDebian8 import OSDebian8
 from sam.os.OSUbuntu1604 import OSUbuntu1604
-from sam.actions.DomainActions import DomainActions
-from sam.actions.SystemActions import SystemActions
-from sam.actions.UserActions import UserActions
+from sam.commands.DomainCommand import DomainCommand
+from sam.commands.SystemCommand import SystemCommand
+from sam.commands.UserCommand import UserCommand
 from pprint import pprint
 
 class SimpleApacheManager():
@@ -30,22 +30,24 @@ class SimpleApacheManager():
         self.os_services = [OSDebian8(), OSUbuntu1604()]
         self.services = [ApacheService()]
         # init all action classes
-        self.actions = [DomainActions(), SystemActions(),UserActions()]
+        self.actions = [DomainCommand(), SystemCommand(), UserCommand()]
         # parse command line args
         self.args=self.parseParameters()
         # do what is needed
         self.execute(self.args)
 
     """
-    Actually do the work needed. Read params and call the according actions
+    Actually do the work needed. Read params and call the according commands
     :return Exit code 0 if success, else value > 0
     """
     def execute(self,args):
         pprint(args)
+        print()
         # execute the right Actions class
         for action in self.actions:
             if action.getName() == args.command:
                 action.process(args)
+                print()
                 return
             elif args.command == 'check':
                 self.check()
@@ -57,14 +59,14 @@ class SimpleApacheManager():
     Parse the command line arguments.
     """
     def parseParameters(self):
-        # parse all actions to generate argparser
+        # parse all commands to generate argparser
         actionNamesList = list()
         for action in self.actions:
             actionNamesList.append(action.getName())
         # create the command line parameters parser
         parser = argparse.ArgumentParser(description='SimpleApacheManager version ' + self.__version__ + '.')
         parser.add_argument('--testrun',action="store_true",help='if set program does try-run withou changing anything on your system.')
-        #parser.add_argument('command', choices=actionNamesList, help='Possible actions.')
+        #parser.add_argument('command', choices=actionNamesList, help='Possible commands.')
         # subparsers for second argument
         subparsers = parser.add_subparsers(dest = 'command', title='sub command help', help = 'available subcommands')
         subparsers.required=True

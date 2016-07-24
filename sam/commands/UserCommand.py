@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import collections
-from sam.actions.IAction import IAction
-#
-# Bundles different services to concrete actions (i.e. create vhost with SSL cert)
-#
-class DomainActions(IAction):
+import re
+from sam.commands.ICommand import IAction
+"""
+Add or remove system users from beeing part of the SimpleApacheManager tool to manage their own domains and stuff.
+"""
+class UserCommand(IAction):
     """
-    List all available actions and their description. Structure is:
+    List all available commands and their description. Structure is:
     dict(action, list(
         list(sub args)
         , description
@@ -17,31 +18,13 @@ class DomainActions(IAction):
     actions=collections.OrderedDict(sorted({
             "list" : [[]
                     ,"list all available domains, subdomains and alias"
-                    ,"sam domain list"]
-            ,"add" : [["domain"]
+                    ,"sam user list"]
+            ,"add" : [["user"]
                     ,"add a new vhost to the server"
-                    ,"sam domain add example.org"]
-            ,"del" : [["domain"]
-                    ,"delete an existing vhost from the server"
-                    ,"sam domain del example.org"]
-            ,"addsub" : [["domain","subdomain"]
-                    ,"add a new subdomain to an existing domain"
-                    ,"sam domain addsub example.org dl"]
-            ,"delsub" : [["domain","subdomain"]
-                    ,"del a existing subdomain from an existing domain"
-                    ,"sam domain delsub example.org dl"]
-            ,"addalias" : [["domain","alias"]
-                    ,"add an alias domain to a existing domain"
-                    ,"sam domain addalias example.org www.foo.de"]
-            ,"delalias" : [["domain","alias"]
-                    ,"delete an alias name from an existing domain"
-                    ,"sam domain delalias example.org www.foo.de"]
+                    ,"sam user add mary"]
              }.items()))
 
-    argHelp={"domain":"The domain name, i.e. example.org"
-            ,"subdomain":"The subdomain name, i.e. sub1, projects"
-            ,"alias":"An alias name for the domain, i.e. example.org or what.ever.org"
-            }
+    argHelp={"user":"A username without whitespaces or special chars."}
 
     def __init__(self):
         pass
@@ -69,28 +52,21 @@ class DomainActions(IAction):
     :return True if given input is valid for the given type (arg parameter), else False is returned.
     '''
     def validateParam(self,arg,param):
-        if arg == self.argHelp.keys()[0]:
-            # if arg == domain
-            pass
-        elif arg == self.argHelp.keys()[1]:
-            # if arg == subdomain
-            pass
-        elif arg == self.argHelp.keys()[2]:
-            # if arg == alias
-            pass
+        regex=r''
+        if arg == "user":
+            # if arg == user: Allow user123, user-local, username22
+            regex=re.compile("^(?!-)[A-Z0-9\d-]{1,40}(?<!-)$", re.IGNORECASE)
         else:
             raise AssertionError('invalid parameter "'+arg+'"')
-        return True
-
-    def getName(self):
-        return "domain"
+        if not regex.match(param):
+            raise Exception("Given value "+param+" is not valid "+arg+" value")
 
     '''
     Return string list with usage examples
     '''
     def getExampleUsage(self):
         out=list()
-        # iterate through actions
+        # iterate through commands
         for action in self.actions.keys():
             # build example string for this action
             desc=self.actions[action][1]
@@ -102,4 +78,14 @@ class DomainActions(IAction):
     Process an action depending on the given args
     '''
     def process(self,args):
-        print("DomainActions triggered")
+        print("UserActions triggered")
+        keys=list(self.actions.keys())
+        if args.sub_command == "add":
+            self.validateParam("user",args.user)
+        elif args.sub_command == "list":
+            pass
+        else:
+            raise Exception("Unknown sub_command " + args.sub_command)
+
+    def getName(self):
+        return "user"
