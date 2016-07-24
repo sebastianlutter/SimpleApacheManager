@@ -8,8 +8,11 @@ if sys.version_info < (3, 0):
 
 import configparser
 import argparse
+import os
 
 from sam.services.ApacheService import ApacheService
+from sam.services.UserService import UserService
+from sam.services.VHostService import VhostService
 from sam.os.OSDebian8 import OSDebian8
 from sam.os.OSUbuntu1604 import OSUbuntu1604
 from sam.commands.DomainCommand import DomainCommand
@@ -20,21 +23,44 @@ from pprint import pprint
 class SimpleApacheManager():
 
     __version__ = "0.0.9"
+    __config_file__ = "config.ini"
+    #TODO: get user home path from environment
+    __config_file_paths__ = [ os.path.abspath("."),os.path.join("/home/user/",".sam/"),"/etc/sam/" ]
 
     def __init__(self):
         print("\nExecuting SimpleApacheManager version "+self.__version__+"\n")
-        # read config.ini first of all
-        self.config = configparser.ConfigParser()
-        self.config.read('config.ini')
         # initalize services and os worker
         self.os_services = [OSDebian8(), OSUbuntu1604()]
-        self.services = [ApacheService()]
+        self.services = [ApacheService(),UserService(),VhostService()]
         # init all action classes
         self.actions = [DomainCommand(), SystemCommand(), UserCommand()]
         # parse command line args
         self.args=self.parseParameters()
+        # search for config.ini
+        configFound=False
+        for search_path in self.__config_file_paths__:
+            fullpath=os.path.join(search_path,'config.ini')
+            if os.path.isfile(fullpath):
+                print("Using config.ini found in "+fullpath)
+                # read config.ini first of all
+                self.config = configparser.ConfigParser()
+                self.config.read(self.__config_file__)
+                configFound=True
+            else:
+                print("\tfound no config.ini in folder "+search_path)
+        if not configFound:
+            raise Exception("Could not find the file "+self.__config_file__)
         # do what is needed
         self.execute(self.args)
+
+    """
+    Print the parsed content of config.ini
+    """
+    def printConfig(self):
+        for section in self.config.keys():
+            print("Section ["+section+"]")
+            for key in self.config[section].keys():
+                print('\t{:<20s}= {}'.format(key,self.config[section][key]))
 
     """
     Actually do the work needed. Read params and call the according commands
@@ -60,13 +86,11 @@ class SimpleApacheManager():
     """
     def parseParameters(self):
         # parse all commands to generate argparser
-        actionNamesList = list()
-        for action in self.actions:
-            actionNamesList.append(action.getName())
         # create the command line parameters parser
         parser = argparse.ArgumentParser(description='SimpleApacheManager version ' + self.__version__ + '.')
-        parser.add_argument('--testrun',action="store_true",help='if set program does try-run withou changing anything on your system.')
-        #parser.add_argument('command', choices=actionNamesList, help='Possible commands.')
+        parser.add_argument('-v',action="store_true",help='run with verbose output.')
+        parser.add_argument('--testrun', action="store_true",
+                            help='if set program does a test-run withou changing anything on your system.')
         # subparsers for second argument
         subparsers = parser.add_subparsers(dest = 'command', title='sub command help', help = 'available subcommands')
         subparsers.required=True
@@ -81,12 +105,14 @@ class SimpleApacheManager():
         except:
             self.printExamples()
             raise
-        return parser.parse_args()
+        return parsedArgs
 
     """
     Run check on all services and os worker
     """
     def check(self):
+        print("\nConfiguration")
+        self.printConfig()
         # run all os checks
         print("\ncheck OS modules:")
         for os_service in self.os_services:
