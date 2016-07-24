@@ -134,24 +134,30 @@ class DomainCommand(IAction):
 
     def commandList(self,domain):
         print("DomainActions triggered: list")
-
+        #TODO: implement
 
     def commandAdd(self,domain):
         print("Create vhost for " + domain)
+        #TODO: implement
 
     def commandDel(self,domain):
         print("Delete existing vhost " + domain)
+        #TODO: implement
 
     def commandAddSub(self, domain,subdomain):
         print("Create subdomain {}.{} for existing domain {}".format(subdomain,domain,domain))
+        #TODO: implement
 
     def commandDelSub(self, domain, subdomain):
         print("Delete subdomain {}.{} from existing domain {}".format(subdomain, domain, domain))
+        #TODO: implement
 
     def commandAddAlias(self, domain, alias):
         print("Add alias {} to existing domain {}".format(alias, domain))
+        #TODO: implement
 
     def commandDelAlias(self, domain, alias):
         print("Delete alias {} from existing domain {}".format(alias, domain))
+        #TODO: implement
 
 

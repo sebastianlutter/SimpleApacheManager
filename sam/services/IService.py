@@ -16,11 +16,7 @@ class IService(ABC):
         pass
 
     @abstractmethod
-    def init(self,):
-        pass
-
-    @abstractmethod
-    def check(self):
+    def check(self,config):
         pass
 
     @abstractmethod

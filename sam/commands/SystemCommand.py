@@ -49,6 +49,8 @@ class SystemCommand(IAction):
 
     def commandStatus(self):
         print("Show status of SimpleApacheManager installation")
+        # TODO: Implement
 
     def commandInstall(self):
-        print("Show status of SimpleApacheManager installation")
+        print("Install SimpleApacheManager in your system")
+        #TODO: Implement

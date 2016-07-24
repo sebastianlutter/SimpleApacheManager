@@ -10,13 +10,7 @@ class OSUbuntu1604(IOperationSystem):
     def __init__(self):
         pass
 
-    def init(self, ):
-        pass
-
     def check(self):
-        pass
-
-    def process(self, job):
         pass
 
     def info(self):

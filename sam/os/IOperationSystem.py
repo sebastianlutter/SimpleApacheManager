@@ -13,18 +13,9 @@ class IOperationSystem(ABC):
     def __init__(self):
         pass
 
-    @abstractmethod
-    def init(self):
-        pass
-
     # Returns true if service is operational and environment is sane
     @abstractmethod
-    def check(self):
-        pass
-
-    # Execute an job defined by command line arguments
-    @abstractmethod
-    def process(self, job):
+    def check(self,config):
         pass
 
     @abstractmethod

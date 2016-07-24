@@ -11,17 +11,8 @@ class OSDebian8(IOperationSystem):
         pass
 
 
-    def init(self, ):
-        pass
-
-
-    def check(self):
+    def check(self,config):
         return 0
-
-
-    def process(self,job):
-        pass
-
 
     def info(self):
         return "Service for Debian 8 install."

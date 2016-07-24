@@ -16,13 +16,13 @@ class UserCommand(IAction):
         , example usage))
     """
     actions=collections.OrderedDict(sorted({
-            "list" : [[]
-                    ,"list all available domains, subdomains and alias"
-                    ,"sam user list"]
-            ,"add" : [["user"]
-                    ,"add a new vhost to the server"
-                    ,"sam user add mary"]
-             }.items()))
+                                               "list" : [[]
+                                                   ,"list all available domains, subdomains and alias"
+                                                   ,"sam user list"]
+                                               ,"add" : [["user"]
+            ,"add a new vhost to the server"
+            ,"sam user add mary"]
+                                           }.items()))
 
     argHelp={"user":"A username without whitespaces or special chars."}
 
@@ -78,14 +78,25 @@ class UserCommand(IAction):
     Process an action depending on the given args
     '''
     def process(self,args):
-        print("UserActions triggered")
         keys=list(self.actions.keys())
         if args.sub_command == "add":
             self.validateParam("user",args.user)
+            self.commandAdd(args.user)
         elif args.sub_command == "list":
-            pass
+            self.commandList()
         else:
             raise Exception("Unknown sub_command " + args.sub_command)
 
     def getName(self):
         return "user"
+
+
+    def commandAdd(self,user):
+        print("Add system user "+user+" to the list of SimpleApacheManager user.")
+        #TODO: Implement
+        pass
+
+    def commandList(self):
+        print("Show the list of SimpleApacheManager user.")
+        #TODO: Implement
+        pass

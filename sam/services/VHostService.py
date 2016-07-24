@@ -10,13 +10,7 @@ class VhostService(IService):
     def __init__(self):
         pass
 
-    def init(self):
-        pass
-
-    def check(self):
-        pass
-
-    def process(self, job):
+    def check(self,user):
         pass
 
     def info(self):

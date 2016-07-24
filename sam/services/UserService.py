@@ -34,10 +34,7 @@ class UserService(IService):
             print("User module does not know jobtype "+jobtype)
 
 
-    def check(self):
-        raise NotImplementedError("ERROR: Should have implemented this")
-
-    def init(self):
+    def check(self,config):
         raise NotImplementedError("ERROR: Should have implemented this")
 
     def listLinkedUsers(self):

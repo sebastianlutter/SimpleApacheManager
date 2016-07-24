@@ -47,7 +47,8 @@ class SimpleApacheManager():
                 self.config.read(self.__config_file__)
                 configFound=True
             else:
-                print("\tfound no config.ini in folder "+search_path)
+                if self.verbose():
+                    print("\tfound no config.ini in folder "+search_path)
         if not configFound:
             raise Exception("Could not find the file "+self.__config_file__)
         # do what is needed
@@ -57,6 +58,7 @@ class SimpleApacheManager():
     Print the parsed content of config.ini
     """
     def printConfig(self):
+        print("\nConfiguration:\n")
         for section in self.config.keys():
             print("Section ["+section+"]")
             for key in self.config[section].keys():
@@ -67,7 +69,8 @@ class SimpleApacheManager():
     :return Exit code 0 if success, else value > 0
     """
     def execute(self,args):
-        pprint(args)
+        if self.verbose():
+            pprint(args)
         print()
         # execute the right Actions class
         for action in self.actions:
@@ -111,7 +114,6 @@ class SimpleApacheManager():
     Run check on all services and os worker
     """
     def check(self):
-        print("\nConfiguration")
         self.printConfig()
         # run all os checks
         print("\ncheck OS modules:")
@@ -132,6 +134,11 @@ class SimpleApacheManager():
                 print(example)
         print(' $ {:<45s} : {}'.format('sam check ','Check environment and all service and OS modules.'+'\n'))
 
+    """
+    Shorthand for verbose
+    """
+    def verbose(self):
+        return self.args.v
 
 # programm entry point
 def main():
