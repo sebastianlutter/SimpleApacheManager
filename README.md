@@ -9,9 +9,8 @@ To install required python modules for SimpleApacheManager using setuptools and 
 
     sudo python3 setup.py install
 
-Afterwards the apllication can be executed with:
-
-    
+Afterwards the application can be executed by calling **samcli**:
+  
 
 
 ## Usage
