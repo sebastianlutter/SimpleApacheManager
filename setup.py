@@ -15,7 +15,7 @@ import re
 
 # get version from SimpleApacheManager.py
 version = re.search(
-    '^__version__\s*=\s*"(.*)"',
+    '^\s*__version__\s*=\s*"(.*)"',
     open('sam/SimpleApacheManager.py').read(),
     re.M
     ).group(1)
