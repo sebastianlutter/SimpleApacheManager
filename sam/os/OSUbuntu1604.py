@@ -11,9 +11,7 @@ class OSUbuntu1604(IOperationSystem):
 
     required_packages = ["libapache2-mpm-itk",
                          "apache2",
-                         "libapache2-mod-php",
-                         "libapache2-mod-proxy-html",
-                         "apache2-mpm-itk"
+                         "libapache2-mod-php"
                          ]
 
     def __init__(self):
@@ -24,6 +22,7 @@ class OSUbuntu1604(IOperationSystem):
         infos=platform.linux_distribution()
         if not infos == ('Ubuntu', '16.04', 'xenial'):
             # in case the OS is wrong stop here
+            a,b,c = infos
             return False
         return True
 
@@ -34,7 +33,25 @@ class OSUbuntu1604(IOperationSystem):
         return "OSUbuntu1604"
 
     def install(self,config):
-        pass
+        # First off all, install the needed software packages in the OS
+        cache = apt.cache.Cache()
+        cache.update()
+        missing=self.get_missing_packages()
+        for package in missing:
+            pkg = cache[package]
+            #print("Package "+package+" installed="+str(pkg.is_installed) )
+            print("\tmark to install "+package)
+            pkg.mark_install()
+        # if packages were marked as installed commit and update cache
+        if len(missing)>0:
+            cache.commit()
+            cache.update()
+            # check again if they are installed now
+            missing=self.get_missing_packages()
+            if len(missing)>0:
+                raise Exception("Abort install of required packages, something has gone wrong. Sorry.")
+        else:
+            print("All required OS packages are already installed.")
 
     def checkStatus(self,config):
         err=False
