@@ -39,11 +39,11 @@ class SystemCommand(IAction):
     '''
     Process an action depending on the given args
     '''
-    def process(self,args):
+    def process(self,args,operationSystemImpl):
         if args.sub_command=="status":
             self.commandStatus()
         elif args.sub_command=="install":
-            self.commandInstall()
+            self.commandInstall(operationSystemImpl)
         else:
             raise Exception("Unknown sub_command " + args.sub_command)
 
@@ -51,6 +51,5 @@ class SystemCommand(IAction):
         print("Show status of SimpleApacheManager installation")
         # TODO: Implement
 
-    def commandInstall(self):
+    def commandInstall(self,operationSystemImpl):
         print("Install SimpleApacheManager in your system")
-        #TODO: Implement

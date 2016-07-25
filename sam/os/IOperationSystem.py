@@ -13,9 +13,18 @@ class IOperationSystem(ABC):
     def __init__(self):
         pass
 
-    # Returns true if service is operational and environment is sane
+    """
+    Check if this class is able to serve for the used OS
+    """
     @abstractmethod
     def check(self,config):
+        pass
+
+    """
+    Check if install status of SimpleApacheManager is sane
+    """
+    @abstractmethod
+    def checkStatus(self):
         pass
 
     @abstractmethod

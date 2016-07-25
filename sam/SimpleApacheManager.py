@@ -9,6 +9,7 @@ if sys.version_info < (3, 0):
 import configparser
 import argparse
 import os
+import platform
 
 from sam.services.ApacheService import ApacheService
 from sam.services.UserService import UserService
@@ -26,6 +27,8 @@ class SimpleApacheManager():
     __config_file__ = "config.ini"
     #TODO: get user home path from environment
     __config_file_paths__ = [ os.path.abspath("."),os.path.expanduser("~/.sam/"),"/etc/sam/" ]
+    __os_service__ = None
+
 
     def __init__(self):
         print("\nExecuting SimpleApacheManager version "+self.__version__+"\n")
@@ -51,8 +54,23 @@ class SimpleApacheManager():
                     print("\tfound no config.ini in folder "+search_path)
         if not configFound:
             raise Exception("Could not find the file "+self.__config_file__)
+        # find working os implementation
+        if not self.findWorkingOSImpl():
+            raise Exception("OperationSystem "+','.join(platform.linux_distribution())+" is not supported by SimpleApacheManager. Abort.")
         # do what is needed
         self.execute(self.args)
+    """
+    Find the right IOperationSystem implementation
+    """
+    def findWorkingOSImpl(self):
+        if self.verbose():
+            print("Identify OperationSystem")
+        for os in self.os_services:
+            if os.check(self.config):
+                self.__os_service__=os
+                print("Found "+os.name()+" environment")
+                return True
+        return False
 
     """
     Print the parsed content of config.ini
@@ -75,7 +93,7 @@ class SimpleApacheManager():
         # execute the right Actions class
         for action in self.actions:
             if action.getName() == args.command:
-                action.process(args)
+                action.process(args,self.__os_service__)
                 print()
                 return
             elif args.command == 'check':

@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import platform
+
 from sam.os.IOperationSystem import IOperationSystem
 
 __author__ = 'Sebastian Lutter'
@@ -17,8 +19,12 @@ class OSUbuntu1604(IOperationSystem):
         pass
 
     def check(self,config):
-        # ('Ubuntu', '16.04', 'xenial')
-        return False
+        # check if debian 8 is running
+        infos=platform.linux_distribution()
+        if not infos == ('Ubuntu', '16.04', 'xenial'):
+            # in case the OS is wrong stop here
+            return False
+        return True
 
     def info(self):
         return "Service for Ubuntu 16.04 install."
@@ -27,4 +33,7 @@ class OSUbuntu1604(IOperationSystem):
         return "OSUbuntu1604"
 
     def install(self,config):
+        pass
+
+    def checkStatus(self):
         pass

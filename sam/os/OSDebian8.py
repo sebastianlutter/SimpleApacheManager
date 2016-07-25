@@ -21,12 +21,15 @@ class OSDebian8(IOperationSystem):
         pass
 
     def check(self,config):
-        err=False
         # check if debian 8 is running
         infos=platform.linux_distribution()
         if not infos == ('debian','8.5',''):
             # in case the OS is wrong stop here
             return False
+        return True
+
+    def checkStatus(self):
+        err=False
         #TODO: implement checks for config and environment
         missing=self.get_missing_packages()
         # return false if packages were missing
@@ -42,13 +45,27 @@ class OSDebian8(IOperationSystem):
         return "OSDebian8"
 
     def install(self,config):
-        #TODO: install missing packages if not installed yet
-        pass
+        # First off all, install the needed software packages in the OS
+        for package in self.get_missing_packages():
+            cache = apt.cache.Cache()
+            cache.update()
+            pkg = cache[package]
+            print("Package "+package+" installed="+pkg.is_installed )
+            print("it is not installed.Now you are installing...")
+            pkg.mark_install()
+            cache.commit()
+            print("DONE.")
+            cache.update()
+        # check again if they are installed now
+        missing=self.get_missing_packages()
+        if len(missing)>0:
+            raise Exception("Abort install of required packages, something has gone wrong. Sorry.")
 
     """
     Check if required packages are installed. Return the list of packages that are missing.
     """
     def get_missing_packages(self):
+        print("Check if required OS packages are installed:")
         missing=list()
         for package in self.required_packages:
             cache = apt.Cache()
