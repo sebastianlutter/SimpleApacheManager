@@ -162,8 +162,6 @@ class SimpleApacheManager():
     Install SimpleApacheManager on the host system. Do pre-install check before.
     """
     def install(self):
-        if not self.check():
-            raise Exception("Abort installation because of errors in pre-checks")
         # check if we have sudo rights
         if not os.geteuid() == 0:
             sys.exit("\nRunning install is only possible with sudo access rights. Please re-run script with sudo.\n")
