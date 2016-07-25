@@ -11,7 +11,7 @@ class ApacheService(IService):
         pass
 
     def check(self,config):
-        pass
+        print("TODO: implement ApacheService.check()")
 
     def info(self):
         return "Apache service module for reload and restart the webserver."

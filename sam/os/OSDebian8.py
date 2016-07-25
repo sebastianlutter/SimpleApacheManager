@@ -28,9 +28,9 @@ class OSDebian8(IOperationSystem):
             return False
         return True
 
-    def checkStatus(self):
+    def checkStatus(self,config):
         err=False
-        #TODO: implement checks for config and environment
+        # collect packages not installed in the host system
         missing=self.get_missing_packages()
         # return false if packages were missing
         if not len(missing)==0:

@@ -9,7 +9,7 @@ This class check if the installation is sane or can install the SimpleApacheMana
 class SystemCommand(IAction):
 
     actions = collections.OrderedDict(sorted({
-         "status" : "shows current options and configuration as well as runs some sanity checks."
+         "check" : "shows current options and configuration as well as runs some sanity checks."
          ,"install" : "install the environment integration in the host system. Needs sudo rights."
          #       ,"restore" : "TODO: restore to last sane configuration if something destroyed the configuration."
      }.items()))
@@ -40,7 +40,7 @@ class SystemCommand(IAction):
     Process an action depending on the given args
     '''
     def process(self,args,operationSystemImpl):
-        if args.sub_command=="status":
+        if args.sub_command=="check":
             self.commandStatus()
         elif args.sub_command=="install":
             self.commandInstall(operationSystemImpl)

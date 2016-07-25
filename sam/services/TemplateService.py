@@ -39,10 +39,10 @@ class TemplateService(IService):
         pass
 
     def check(self,user):
-        pass
+        print("TODO: implement TemplateService.check()")
 
     def info(self):
-        return "VHost service module for reload and restart the webserver."
+        return "Template service module for generating config from the template stubs."
 
     def name(self):
         return "VHost service"

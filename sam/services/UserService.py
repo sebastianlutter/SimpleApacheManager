@@ -35,7 +35,7 @@ class UserService(IService):
 
 
     def check(self,config):
-        raise NotImplementedError("ERROR: Should have implemented this")
+        print("TODO: implement UserService.check()")
 
     def listLinkedUsers(self):
         pass
@@ -58,7 +58,7 @@ class UserService(IService):
         pass
 
     def info(self):
-        return "User service module for reload and restart the webserver."
+        return "User service module for adding and removing user."
 
 
     def name(self):

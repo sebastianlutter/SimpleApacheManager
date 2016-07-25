@@ -24,7 +24,7 @@ class IOperationSystem(ABC):
     Check if install status of SimpleApacheManager is sane
     """
     @abstractmethod
-    def checkStatus(self):
+    def checkStatus(self,config):
         pass
 
     @abstractmethod

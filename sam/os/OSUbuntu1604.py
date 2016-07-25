@@ -35,5 +35,5 @@ class OSUbuntu1604(IOperationSystem):
     def install(self,config):
         pass
 
-    def checkStatus(self):
+    def checkStatus(self,config):
         pass

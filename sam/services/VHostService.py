@@ -11,10 +11,10 @@ class VhostService(IService):
         pass
 
     def check(self,user):
-        pass
+        print("TODO: implement VHostService.check()")
 
     def info(self):
-        return "VHost service module for reload and restart the webserver."
+        return "VHost service module for create new vhosts."
 
     def name(self):
         return "VHost service"

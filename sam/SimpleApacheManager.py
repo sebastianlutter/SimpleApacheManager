@@ -14,6 +14,7 @@ import platform
 from sam.services.ApacheService import ApacheService
 from sam.services.UserService import UserService
 from sam.services.VHostService import VhostService
+from sam.services.TemplateService import TemplateService
 from sam.os.OSDebian8 import OSDebian8
 from sam.os.OSUbuntu1604 import OSUbuntu1604
 from sam.commands.DomainCommand import DomainCommand
@@ -34,7 +35,7 @@ class SimpleApacheManager():
         print("\nExecuting SimpleApacheManager version "+self.__version__+"\n")
         # initalize services and os worker
         self.os_services = [OSDebian8(), OSUbuntu1604()]
-        self.services = [ApacheService(),UserService(),VhostService()]
+        self.services = [ApacheService(),UserService(),VhostService(),TemplateService()]
         # init all action classes
         self.actions = [DomainCommand(), SystemCommand(), UserCommand()]
         # parse command line args
@@ -133,19 +134,18 @@ class SimpleApacheManager():
     """
     def check(self):
         self.printConfig()
-        # run all os checks
-        print("\ncheck OS modules:")
-        for os_service in self.os_services:
-            print('  '+os_service.name() + "\t: " + os_service.info())
-            if not os_service.check(self.config):
-                if self.args.v:
-                    print("\tOS check failed for "+os_service.name())
-            else:
-                print("\tcheck OK for "+os_service.name())
+        # run os check
+        print("\ncheck OS module:")
+        print('  '+self.__os_service__.name() + "\t: " + self.__os_service__.info())
+        if not self.__os_service__.checkStatus(self.config):
+            if self.args.v:
+                print("\tOS check failed for "+self.__os_service__.name())
+        else:
+            print("\tcheck OK for "+self.__os_service__.name())
         print("\ncheck service modules:")
         for service in self.services:
             print('  '+service.name() + "\t: " + service.info())
-            #service.check(self.config)
+            service.check(self.config)
         print()
 
     '''
