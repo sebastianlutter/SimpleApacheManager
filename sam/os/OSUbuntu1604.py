@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-
+import apt
 import platform
 
 from sam.os.IOperationSystem import IOperationSystem

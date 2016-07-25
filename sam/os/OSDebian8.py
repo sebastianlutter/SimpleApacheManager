@@ -5,7 +5,6 @@ from sam.os.IOperationSystem import IOperationSystem
 
 import apt
 import platform
-import pprint
 
 __author__ = 'Sebastian Lutter'
 
@@ -24,6 +23,9 @@ class OSDebian8(IOperationSystem):
     def check(self,config):
         # check if debian 8 is running
         infos=platform.linux_distribution()
+
+
+
         if not infos == ('debian','8.5',''):
             # in case the OS is wrong stop here
             return False
