@@ -36,4 +36,26 @@ class OSUbuntu1604(IOperationSystem):
         pass
 
     def checkStatus(self,config):
-        pass
+        err=False
+        # collect packages not installed in the host system
+        missing=self.get_missing_packages()
+        # return false if packages were missing
+        if not len(missing)==0:
+            err=True
+        # if nothing is wrong return true
+        return not err
+
+    """
+    Check if required packages are installed. Return the list of packages that are missing.
+    """
+    def get_missing_packages(self):
+        print("Check if required OS packages are installed:")
+        missing=list()
+        for package in self.required_packages:
+            cache = apt.Cache()
+            if cache[package].is_installed:
+                print('\t'+package+" installed")
+            else:
+                print('\t'+package+' missing')
+                missing.append(package)
+        return missing
