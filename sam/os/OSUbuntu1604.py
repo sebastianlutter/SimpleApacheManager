@@ -11,7 +11,7 @@ class OSUbuntu1604(IOperationSystem):
 
     required_packages = ["libapache2-mpm-itk",
                          "apache2",
-                         "libapache2-mod-php5",
+                         "libapache2-mod-php",
                          "libapache2-mod-proxy-html",
                          "apache2-mpm-itk",
                          "python3-setuptools"]
