@@ -6,7 +6,7 @@ __author__ = 'Sebastian Lutter'
 # Abstract operation system operations class. This is an interface for
 # different linux OS implementations.
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 
 class IOperationSystem(ABC):
 
@@ -20,8 +20,12 @@ class IOperationSystem(ABC):
 
     @abstractmethod
     def info(self):
-        return "NOT SET YET"
+        pass
 
     @abstractmethod
     def name(self):
-        return "NOT SET YET"
+        pass
+
+    @abstractmethod
+    def install(self,config):
+        pass

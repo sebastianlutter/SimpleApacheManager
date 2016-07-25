@@ -25,7 +25,7 @@ class SimpleApacheManager():
     __version__ = "0.0.9"
     __config_file__ = "config.ini"
     #TODO: get user home path from environment
-    __config_file_paths__ = [ os.path.abspath("."),os.path.join("/home/user/",".sam/"),"/etc/sam/" ]
+    __config_file_paths__ = [ os.path.abspath("."),os.path.expanduser("~/.sam/"),"/etc/sam/" ]
 
     def __init__(self):
         print("\nExecuting SimpleApacheManager version "+self.__version__+"\n")
@@ -119,9 +119,15 @@ class SimpleApacheManager():
         print("\ncheck OS modules:")
         for os_service in self.os_services:
             print('  '+os_service.name() + "\t: " + os_service.info())
+            if not os_service.check(self.config):
+                if self.args.v:
+                    print("\tOS check failed for "+os_service.name())
+            else:
+                print("\tcheck OK for "+os_service.name())
         print("\ncheck service modules:")
         for service in self.services:
             print('  '+service.name() + "\t: " + service.info())
+            #service.check(self.config)
         print()
 
     '''
