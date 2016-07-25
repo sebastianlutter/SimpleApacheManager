@@ -13,8 +13,8 @@ class OSUbuntu1604(IOperationSystem):
                          "apache2",
                          "libapache2-mod-php",
                          "libapache2-mod-proxy-html",
-                         "apache2-mpm-itk",
-                         "python3-setuptools"]
+                         "apache2-mpm-itk"
+                         ]
 
     def __init__(self):
         pass

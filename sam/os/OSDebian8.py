@@ -15,7 +15,7 @@ class OSDebian8(IOperationSystem):
                          "libapache2-mod-php5",
                          "libapache2-mod-proxy-html",
                          "apache2-mpm-itk",
-                         "python3-setuptools"]
+                         ]
 
     def __init__(self):
         pass
