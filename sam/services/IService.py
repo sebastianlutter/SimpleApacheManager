@@ -26,3 +26,7 @@ class IService(ABC):
     @abstractmethod
     def name(self):
         pass
+
+    @abstractmethod
+    def install(self):
+        pass

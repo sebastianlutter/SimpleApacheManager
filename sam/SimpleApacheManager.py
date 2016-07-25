@@ -15,6 +15,7 @@ from sam.services.ApacheService import ApacheService
 from sam.services.UserService import UserService
 from sam.services.VHostService import VhostService
 from sam.services.TemplateService import TemplateService
+from sam.services.SystemService import SystemService
 from sam.os.OSDebian8 import OSDebian8
 from sam.os.OSUbuntu1604 import OSUbuntu1604
 from sam.commands.DomainCommand import DomainCommand
@@ -22,11 +23,13 @@ from sam.commands.SystemCommand import SystemCommand
 from sam.commands.UserCommand import UserCommand
 from pprint import pprint
 
+# a global verbose flag
+verbose=False
+
 class SimpleApacheManager():
 
     __version__ = "0.0.9"
     __config_file__ = "config.ini"
-    #TODO: get user home path from environment
     __config_file_paths__ = [ os.path.abspath("."),os.path.expanduser("~/.sam/"),"/etc/sam/" ]
     __os_service__ = None
 
@@ -35,7 +38,7 @@ class SimpleApacheManager():
         print("\nExecuting SimpleApacheManager version "+self.__version__+"\n")
         # initalize services and os worker
         self.os_services = [OSDebian8(), OSUbuntu1604()]
-        self.services = [ApacheService(),UserService(),VhostService(),TemplateService()]
+        self.services = [ApacheService(),UserService(),VhostService(),TemplateService(),SystemService()]
         # init all action classes
         self.actions = [DomainCommand(), SystemCommand(), UserCommand()]
         # parse command line args
@@ -60,6 +63,8 @@ class SimpleApacheManager():
             raise Exception("OperationSystem "+','.join(platform.linux_distribution())+" is not supported by SimpleApacheManager. Abort.")
         # do what is needed
         self.execute(self.args)
+
+
     """
     Find the right IOperationSystem implementation
     """
@@ -91,14 +96,17 @@ class SimpleApacheManager():
         if self.verbose():
             pprint(args)
         print()
+        if args.command == 'install':
+            self.install()
+            return
+        elif args.command == 'check':
+            self.check()
+            return
         # execute the right Actions class
         for action in self.actions:
             if action.getName() == args.command:
                 action.process(args,self.__os_service__)
                 print()
-                return
-            elif args.command == 'check':
-                self.check()
                 return
         raise Exception("Command "+args.command+" cannot be processed. No module that handle it found.")
 
@@ -112,12 +120,10 @@ class SimpleApacheManager():
         parser = argparse.ArgumentParser(description='SimpleApacheManager version ' + self.__version__ + '.')
         parser.add_argument('-v',action="store_true",help='run with verbose output.')
         parser.add_argument('--testrun', action="store_true",
-                            help='if set program does a test-run withou changing anything on your system.')
+                            help='if set program does a test-run without modifying anything.')
         # subparsers for second argument
         subparsers = parser.add_subparsers(dest = 'command', title='sub command help', help = 'available subcommands')
         subparsers.required=True
-        # add global check parameter
-        check_parser = subparsers.add_parser("check",help='Check environment and all service and OS modules.')
         # let each action class add its parameter to the parser
         for action in self.actions:
             action.addParserArgs(subparsers)
@@ -133,6 +139,7 @@ class SimpleApacheManager():
     Run check on all services and os worker
     """
     def check(self):
+        err=False
         self.printConfig()
         # run os check
         print("\ncheck OS module:")
@@ -140,13 +147,28 @@ class SimpleApacheManager():
         if not self.__os_service__.checkStatus(self.config):
             if self.args.v:
                 print("\tOS check failed for "+self.__os_service__.name())
+            err=True
         else:
             print("\tcheck OK for "+self.__os_service__.name())
         print("\ncheck service modules:")
         for service in self.services:
             print('  '+service.name() + "\t: " + service.info())
-            service.check(self.config)
+            if not service.check(self.config):
+                err=True
         print()
+        return not err
+
+    """
+    Install SimpleApacheManager on the host system. Do pre-install check before.
+    """
+    def install(self):
+        if not self.check():
+            raise Exception("Abort installation because of errors in pre-checks")
+        # check if we have sudo rights
+        if not os.geteuid() == 0:
+            sys.exit("\nRunning install is only possible with sudo access rights. Please re-run script with sudo.\n")
+        print("Install SimpleApacheManager on "+self.__os_service__.name())
+        self.__os_service__.install(self.config)
 
     '''
     Print example usage strings (from subparsers)

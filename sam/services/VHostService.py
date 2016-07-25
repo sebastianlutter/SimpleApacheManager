@@ -18,3 +18,6 @@ class VhostService(IService):
 
     def name(self):
         return "VHost service"
+
+    def install(self):
+        pass

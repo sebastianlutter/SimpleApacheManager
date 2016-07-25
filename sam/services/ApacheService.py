@@ -18,3 +18,6 @@ class ApacheService(IService):
 
     def name(self):
         return "ApacheService"
+
+    def install(self):
+        pass

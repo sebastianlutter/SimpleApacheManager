@@ -51,15 +51,17 @@ class UserService(IService):
     def checkIfUserExistsInPhoenixToolkit(self,username):
         pass
 
-    def __addNewUser__(self,username):
+    def info(self):
+        return "User service module for adding and removing user."
+
+    def name(self):
+        return "User service"
+
+    def install(self):
+        pass
+
+    def __addNewUser__(self, username):
         pass
 
     def __addUserToSudoGroup__(self):
         pass
-
-    def info(self):
-        return "User service module for adding and removing user."
-
-
-    def name(self):
-        return "User service"

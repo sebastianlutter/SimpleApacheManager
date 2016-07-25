@@ -46,3 +46,6 @@ class TemplateService(IService):
 
     def name(self):
         return "VHost service"
+
+    def install(self):
+        pass

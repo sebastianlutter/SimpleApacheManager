@@ -17,12 +17,13 @@ class SystemCommand(IAction):
     def __init__(self):
         pass
 
+    """
+    Do not add anything here, there is a check and install argument added by SimpleApacheManager
+    """
     def addParserArgs(self, subparser):
-        parser=subparser.add_parser(self.getName(), help = ', '.join(self.actions.keys()))
-        subsubparser=parser.add_subparsers(dest = 'sub_command')
-        # and now for the parameters of each action (i.e. domain and/or subdomain)
+        # add parameters for each action (i.e. check or install). But do not use "sam system install", add it to parent argparse directly "sam install"
         for action in self.actions.keys():
-            tmp_parser=subsubparser.add_parser(action,help=self.actions[action])
+            tmp_parser=subparser.add_parser(action,help=self.actions[action])
 
     def getName(self):
         return "system"
@@ -33,7 +34,7 @@ class SystemCommand(IAction):
     def getExampleUsage(self):
         out=list()
         for action in self.actions.keys():
-            out.append(' $ {:<45s} : {}'.format('sam system '+action,self.actions[action]))
+            out.append(' $ {:<45s} : {}'.format('sam '+action,self.actions[action]))
         return out
 
     '''
