@@ -2,7 +2,14 @@
 #
 # Install script based on setuptools and pip
 #
-from setuptools import setup, find_packages
+
+import sys
+# check if setuptools are available
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    print("Please install python3-setuptools in your operation system. Abort.")
+    sys.exit(1)
 
 import re
 
