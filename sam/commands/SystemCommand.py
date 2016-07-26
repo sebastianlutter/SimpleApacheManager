@@ -2,12 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import pprint
 import sys
+
+import os
 
 from sam.commands.ICommand import IAction
 
 """
 This class manages SimpleApacheManager system tasks. Install and check if all services.
+A Command class may call sys.exit if needed, a Service class should never do this.
 """
 class SystemCommand(IAction):
 
@@ -59,8 +63,8 @@ class SystemCommand(IAction):
     Do all steps needed to install SimpleApacheManager folder structures (i.e. /var/www/vhosts/)
     """
     def commandInstall(self,services,config):
-        sys_user=config['system']['ADMIN_USER']
-        sys_group=config['system']['ADMIN_GROUP']
+        sys_user=config['system']['admin_user']
+        sys_group=config['system']['admin_group']
         print("Install SimpleApacheManager in your OS.")
         # make sure user exists, abort if not
         if not services['user'].checkIfUserExistsInOS(sys_user):
@@ -75,4 +79,25 @@ class SystemCommand(IAction):
         if not services['user'].checkIfUserIsInGroup(sys_user,sys_group):
             print("User "+sys_user+" is not part of "+sys_group+", add it now.")
             services['user'].addUserToGroup(sys_user,sys_group)
+        print("Creating folder structure:")
+        # Now create the folder structure needed
+        config_dict=dict(config['system'])
+        for property in config_dict.keys():
+            if property.startswith("folder_vhost"):
+                directory=config['system'][property]
+                if not os.path.isdir(directory):
+                    print("\tcreating folder "+directory)
+                    services['system'].createDirWithParents(directory,sys_user,sys_group)
+                else:
+                    #check if ownership is ok
+                    owner_user, owner_group = services['system'].getOwnership(directory)
+                    if not (owner_user == sys_user and owner_group == sys_group):
+                        print("\tfix ownership of folder "+directory)
+                        services['system'].chownRecursive(directory,sys_user,sys_group)
+                    else:
+                        print("\tskip existing folder "+directory)
+        print("Generate default config in /etc/apache2/sites-available/SimpleApacheManager.conf")
+        # now copy sam global configuration file to /etc/apache2/sites-enabled
+        services['template'].createGlobalApacheConfig(config,services['system'])
+        
 

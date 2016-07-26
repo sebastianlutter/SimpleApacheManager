@@ -1,0 +1,2 @@
+- implement service checks to validate their config.ini option. Check if they are sane
+- 
