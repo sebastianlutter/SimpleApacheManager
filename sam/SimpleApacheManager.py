@@ -38,9 +38,17 @@ class SimpleApacheManager():
         print("\nExecuting SimpleApacheManager version "+self.__version__+"\n")
         # initalize services and os worker
         self.os_services = [OSDebian8(), OSUbuntu1604()]
-        self.services = [ApacheService(),UserService(),VhostService(),TemplateService(),SystemService()]
+        self.services = { "apache":ApacheService(),
+                          "user":UserService(),
+                          "vhost":VhostService(),
+                          "template":TemplateService(),
+                          "system":SystemService()
+                          }
         # init all action classes
-        self.actions = [DomainCommand(), SystemCommand(), UserCommand()]
+        self.commands = {"domain":DomainCommand(),
+                         "system":SystemCommand(),
+                         "user":UserCommand()
+                         }
         # parse command line args
         self.args=self.parseParameters()
         # search for config.ini
@@ -100,12 +108,14 @@ class SimpleApacheManager():
             self.install()
             return
         elif args.command == 'check':
-            self.check()
+            if not self.check():
+                print("ERROR: one or more checks failed. SimpleApacheManager is not operational.")
             return
         # execute the right Actions class
-        for action in self.actions:
+        for action_key in self.commands.keys():
+            action=self.commands[action_key]
             if action.getName() == args.command:
-                action.process(args,self.__os_service__)
+                action.process(args,self.services)
                 print()
                 return
         raise Exception("Command "+args.command+" cannot be processed. No module that handle it found.")
@@ -125,7 +135,8 @@ class SimpleApacheManager():
         subparsers = parser.add_subparsers(dest = 'command', title='sub command help', help = 'available subcommands')
         subparsers.required=True
         # let each action class add its parameter to the parser
-        for action in self.actions:
+        for action_key in self.commands.keys():
+            action = self.commands[action_key]
             action.addParserArgs(subparsers)
         # Parse the command line arguments
         try:
@@ -151,8 +162,9 @@ class SimpleApacheManager():
         else:
             print("\tcheck OK for "+self.__os_service__.name())
         print("\ncheck service modules:")
-        for service in self.services:
-            print('  '+service.name() + "\t: " + service.info())
+        for service_key in self.services.keys():
+            service=self.services[service_key]
+            print('  '+service_key + "\t: " + service.info())
             if not service.check(self.config):
                 err=True
         print()
@@ -162,18 +174,23 @@ class SimpleApacheManager():
     Install SimpleApacheManager on the host system. Do pre-install check before.
     """
     def install(self):
-        # check if we have sudo rights
-        if not os.geteuid() == 0:
-            sys.exit("\nRunning install is only possible with sudo access rights. Please re-run script with sudo.\n")
         print("Install SimpleApacheManager on "+self.__os_service__.name())
+        # do we have sudo rights?
+        if not self.services['user'].sudoPermissionsAvailable():
+            print("To install SimpleApacheManager run script with sudo. Abort.")
+            sys.exit(1)
+        # install required OS packages if needed
         self.__os_service__.install(self.config)
+        # Delegate SimpleApacheManger installation to SystemCommand class
+        self.commands['system'].process(self.services,self.config,self.args)
 
     '''
     Print example usage strings (from subparsers)
     '''
     def printExamples(self):
         print("\nExample usage:\n")
-        for action in self.actions:
+        for action_key in self.commands.keys():
+            action = self.commands[action_key]
             for example in action.getExampleUsage():
                 print(example)
         print(' $ {:<45s} : {}'.format('sam check ','Check environment and all service and OS modules.'+'\n'))

@@ -104,7 +104,8 @@ class DomainCommand(IAction):
     '''
     Process an action depending on the given args
     '''
-    def process(self,args):
+
+    def process(self, services, config, args):
         if args.sub_command=="add":
             self.validateParam("domain",args.domain)
             self.commandAdd(args.domain)

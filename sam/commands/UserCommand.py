@@ -77,7 +77,7 @@ class UserCommand(IAction):
     '''
     Process an action depending on the given args
     '''
-    def process(self,args):
+    def process(self,services,config,args):
         keys=list(self.actions.keys())
         if args.sub_command == "add":
             self.validateParam("user",args.user)

@@ -1,15 +1,18 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from grp import getgrnam
-import grp
+
 import os
-import subprocess
 import sys
+import pwd
+import grp
 
 __author__ = 'Sebastian Lutter'
 #TODO: clean old code
 from pwd import getpwnam
+from grp import getgrnam
+
 from sam.services.IService import IService
+from sam.services.SystemService import SystemService
 
 class UserService(IService):
 
@@ -33,22 +36,7 @@ class UserService(IService):
         else:
             print("User module does not know jobtype "+jobtype)
 
-
     def check(self,config):
-        print("TODO: implement UserService.check()")
-
-    def listLinkedUsers(self):
-        pass
-
-    # check if a user exists in the system
-    def __checkIfUserExistsInOS__(self,username):
-        try:
-            user=getpwnam(username)
-            return True
-        except KeyError:
-            return False
-
-    def checkIfUserExistsInPhoenixToolkit(self,username):
         pass
 
     def info(self):
@@ -60,8 +48,66 @@ class UserService(IService):
     def install(self):
         pass
 
-    def __addNewUser__(self, username):
+    """
+    Returns true if script has been called with sudo permissions.
+    """
+    def sudoPermissionsAvailable(self):
+        # check if we have sudo rights
+        return os.geteuid() == 0
+
+    """
+    Add the user to the group with sudo permissions to samcli.
+    Checks if user exists in OS.
+    """
+    def addNewUser(self, username):
         pass
 
-    def __addUserToSudoGroup__(self):
+    """
+    Add the given user to the given group
+    """
+    def addUserToGroup(self,user,group):
         pass
+
+    """
+    Check if a given user is in the given group
+    """
+    def checkIfUserIsInGroup(self,user,group):
+        # get all groups of the given user
+        groups = [g.gr_name for g in grp.getgrall() if user in g.gr_mem]
+        gid = pwd.getpwnam(user).pw_gid
+        groups.append(grp.getgrgid(gid).gr_name)
+        # check if user is in group
+        return group in groups
+
+    def __listLinkedUsers__(self):
+        pass
+
+    """
+    check if a user exists in the system
+    """
+    def checkIfUserExistsInOS(self,username):
+        try:
+            user=getpwnam(username)
+            return True
+        except KeyError:
+            return False
+
+    """
+    check if a user exists in the system
+    """
+    def checkIfGroupExistsInOS(self, group):
+        try:
+            group = getgrnam(group)
+            return True
+        except KeyError:
+            return False
+
+    """
+    create a group in the OS
+    """
+    def createOSGroup(self,group,system_service):
+        exitcode, stdout, stderr = system_service.run_shell_commando(["addgroup",group])
+        # check if it exists now
+        if exitcode != 0:
+            print("Failed to add group " + group + " to operation system.\nstdout="+stdout+"\nstderr=" + stderr)
+            sys.exit(1)

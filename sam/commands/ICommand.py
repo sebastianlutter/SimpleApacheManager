@@ -27,5 +27,5 @@ class IAction(ABC):
         pass
 
     @abstractmethod
-    def process(self,args):
+    def process(self, services, config, args):
         pass

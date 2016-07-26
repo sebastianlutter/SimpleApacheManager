@@ -2,9 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import sys
+
 from sam.commands.ICommand import IAction
+
 """
-This class check if the installation is sane or can install the SimpleApacheManager in the system.
+This class manages SimpleApacheManager system tasks. Install and check if all services.
 """
 class SystemCommand(IAction):
 
@@ -40,11 +43,11 @@ class SystemCommand(IAction):
     '''
     Process an action depending on the given args
     '''
-    def process(self,args,operationSystemImpl):
-        if args.sub_command=="check":
+    def process(self, services, config, args):
+        if args.command=="check":
             self.commandStatus()
-        elif args.sub_command=="install":
-            self.commandInstall(operationSystemImpl)
+        elif args.command=="install":
+            self.commandInstall(services,config)
         else:
             raise Exception("Unknown sub_command " + args.sub_command)
 
@@ -52,5 +55,24 @@ class SystemCommand(IAction):
         print("Show status of SimpleApacheManager installation")
         # TODO: Implement
 
-    def commandInstall(self,operationSystemImpl):
-        print("Install SimpleApacheManager in your system")
+    """
+    Do all steps needed to install SimpleApacheManager folder structures (i.e. /var/www/vhosts/)
+    """
+    def commandInstall(self,services,config):
+        sys_user=config['system']['ADMIN_USER']
+        sys_group=config['system']['ADMIN_GROUP']
+        print("Install SimpleApacheManager in your OS.")
+        # make sure user exists, abort if not
+        if not services['user'].checkIfUserExistsInOS(sys_user):
+            print("The given ADMIN_USER "+sys_user+" does not exist in your OS. \nPlease create it manually (i.e.: sudo adduser "+sys_user+").")
+            sys.exit(1)
+        # make sure group exists, add it if not
+        if not services['user'].checkIfGroupExistsInOS(sys_group):
+            # add group to OS
+            print("\tadmin group "+sys_group+" does not exist, try to create it.")
+            services['user'].createOSGroup(sys_group,services['system'])
+        # add user to group (if not already part of)
+        if not services['user'].checkIfUserIsInGroup(sys_user,sys_group):
+            print("User "+sys_user+" is not part of "+sys_group+", add it now.")
+            services['user'].addUserToGroup(sys_user,sys_group)
+

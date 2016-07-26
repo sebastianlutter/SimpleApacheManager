@@ -2,9 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from sam.os.IOperationSystem import IOperationSystem
-
+"""
+Make sure that required environment packages are installed in Debian8.
+"""
 import apt
 import platform
+
+from sam.services.SystemService import SystemService
 
 __author__ = 'Sebastian Lutter'
 
@@ -23,9 +27,6 @@ class OSDebian8(IOperationSystem):
     def check(self,config):
         # check if debian 8 is running
         infos=platform.linux_distribution()
-
-
-
         if not infos == ('debian','8.5',''):
             # in case the OS is wrong stop here
             return False
@@ -37,6 +38,13 @@ class OSDebian8(IOperationSystem):
         missing=self.get_missing_packages()
         # return false if packages were missing
         if not len(missing)==0:
+            print("FAILED: There are {} required packages missing.".format(str(len(missing))))
+            err=True
+        # check if samcli command is in place
+        sys_service = SystemService()
+        exitcode,stdout,stderr = sys_service.run_shell_commando(['samcli','-h'])
+        if exitcode != 0:
+            print("FAILED: The samcli command is not present in PATH: "+stderr)
             err=True
         # if nothing is wrong return true
         return not err

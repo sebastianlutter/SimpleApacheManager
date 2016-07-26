@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 import apt
 import platform
-
+"""
+Make sure that required environment packages are installed in Ubuntu 16.04.
+"""
 from sam.os.IOperationSystem import IOperationSystem
 
 __author__ = 'Sebastian Lutter'
