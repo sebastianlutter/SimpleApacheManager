@@ -65,8 +65,12 @@ class UserService(IService):
     """
     Add the given user to the given group
     """
-    def addUserToGroup(self,user,group):
-        pass
+    def addUserToGroup(self,user,group,sys_service):
+        exitcode, stdout, stderr = sys_service.run_shell_commando(['gpasswd','-a',user, group])
+        if exitcode != 0:
+            msg='Add user {} to group {} failed.\nstdout={}\nstderr={}'.format(user,group,stdout,stderr)
+            print(msg)
+            raise Exception(msg)
 
     """
     Check if a given user is in the given group

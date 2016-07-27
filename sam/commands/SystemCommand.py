@@ -61,6 +61,7 @@ class SystemCommand(IAction):
 
     """
     Do all steps needed to install SimpleApacheManager folder structures (i.e. /var/www/vhosts/)
+    and global configurations.
     """
     def commandInstall(self,services,config):
         sys_user=config['system']['admin_user']
@@ -70,6 +71,8 @@ class SystemCommand(IAction):
         if not services['user'].checkIfUserExistsInOS(sys_user):
             print("The given ADMIN_USER "+sys_user+" does not exist in your OS. \nPlease create it manually (i.e.: sudo adduser "+sys_user+").")
             sys.exit(1)
+        else:
+            print("Given admin_user "+sys_user+" does exist in the OS.")
         # make sure group exists, add it if not
         if not services['user'].checkIfGroupExistsInOS(sys_group):
             # add group to OS
@@ -78,7 +81,7 @@ class SystemCommand(IAction):
         # add user to group (if not already part of)
         if not services['user'].checkIfUserIsInGroup(sys_user,sys_group):
             print("User "+sys_user+" is not part of "+sys_group+", add it now.")
-            services['user'].addUserToGroup(sys_user,sys_group)
+            services['user'].addUserToGroup(sys_user,sys_group,services['system'])
         print("Creating folder structure:")
         # Now create the folder structure needed
         config_dict=dict(config['system'])
@@ -96,8 +99,17 @@ class SystemCommand(IAction):
                         services['system'].chownRecursive(directory,sys_user,sys_group)
                     else:
                         print("\tskip existing folder "+directory)
+        try:
+            # copy default vhost
+            services['template'].copyDefaultVhost(services['system'],config['system']['folder_sam_source_dir'])
+        except:
+            print("Copy default template failed with exception. Continue anyway.")
         print("Generate default config in /etc/apache2/sites-available/SimpleApacheManager.conf")
         # now copy sam global configuration file to /etc/apache2/sites-enabled
         services['template'].createGlobalApacheConfig(config,services['system'])
-        
+        # unlink existing sites-enabled/000-default symlink and replace with new link to sam config
+        services['template'].createGlobalSymlink(config['system']['folder_sam_source_dir'],services['system'])
+        # now reload the apache configuration
+        services['apache'].reloadApache(services['system'])
+        # TODO: user mode integration, respect testrun flag etc.
 

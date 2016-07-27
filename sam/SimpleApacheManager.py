@@ -13,7 +13,6 @@ import platform
 
 from sam.services.ApacheService import ApacheService
 from sam.services.UserService import UserService
-from sam.services.VHostService import VhostService
 from sam.services.TemplateService import TemplateService
 from sam.services.SystemService import SystemService
 from sam.os.OSDebian8 import OSDebian8
@@ -40,10 +39,11 @@ class SimpleApacheManager():
         self.os_services = [OSDebian8(), OSUbuntu1604()]
         self.services = { "apache":ApacheService(),
                           "user":UserService(),
-                          "vhost":VhostService(),
                           "template":TemplateService(),
                           "system":SystemService()
                           }
+
+
         # init all action classes
         self.commands = {"domain":DomainCommand(),
                          "system":SystemCommand(),

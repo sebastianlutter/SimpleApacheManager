@@ -4,6 +4,10 @@ import pwd
 
 import grp
 
+import shutil
+
+import time
+
 from sam.services.IService import IService
 import subprocess
 import sys
@@ -100,4 +104,69 @@ class SystemService(IService):
         return ( pwd.getpwuid(os.stat(filename).st_uid).pw_name
                  , grp.getgrgid(os.stat(filename).st_gid).gr_name )
 
+    """
+    Delete a symlink
+    """
+    def unlinkSymlink(self, linkpath):
+        if not os.path.islink(linkpath):
+            raise Exception("Cannot unlink "+linkpath+". Is not a symlink.")
+        print("\tunlink symlink "+linkpath)
+        os.unlink(linkpath)
 
+    """
+    Create a symlink with linkname pointing to src
+    """
+    def createSymlink(self, src, linkname):
+        if not os.path.exists(src):
+            print("\tsymlink destination " + src + " does not exist. Abort.")
+            raise Exception("\tsymlink destination " + src + " does not exist. Abort.")
+        if not os.path.islink(linkname):
+            print("\tsymlink " + linkname + " --> " + src)
+            os.symlink(src, linkname)
+        else:
+            print("\t\tdo not touch existing link " + src)
+        return os.path.islink(linkname)
+
+    """
+    Delete the given folder recursive. Ignore Errors, just do it.
+    :return True if delete succeeded, else False
+    """
+    def deleteFolderRecursive(self, path):
+        if not os.path.isdir(path):
+            print("\tERROR:" + path + " is not a directory. Abort.")
+            return False
+        # delete folder ignore errors
+        shutil.rmtree(path, True, onerror=None)
+        # check if dir has been deleted
+        return not os.path.isdir(path)
+
+    """
+    Create a tar.bz2 from the given path, and store it in /var/www/vhosts/backup
+    :path Folder to backup
+    :filename Filename of the backup without suffix. Name will be 2016_07_27_12_07_12__FILENAME.tar.bz2
+    :archiveFolder Folder to store the backup file in.
+    :return True if backup was successful, else return False
+    """
+    def createFolderBackup(self, path, filename,archiveFolder):
+        abspath = os.path.abspath(path)
+        if not os.path.isdir(abspath):
+            print("Folder " + abspath + " does not exist. Abort.")
+            return False
+        # Create archive name with timestamp
+        timestamp = time.strftime("%Y_%m_%d_%H_%M_%S__", time.localtime())
+        domain = os.path.basename(abspath)
+        backupfile = os.path.join("", timestamp + filename + ".tar.bz2")
+        print("\tcreated backup of " + path + ": " + backupfile)
+        exitcode,stdout,stderr = self.run_shell_commando(["tar", "cfj", backupfile, path])
+        if exitcode != 0:
+            print("Error while doing backup:\n{}\n{}".format(stdout,stderr))
+            return False
+        else:
+            return True
+    """
+    Copy filetree from source to destination. Destination dir must not exist. Symlinks are
+    alllowed.
+    """
+    def copyFolderRecursive(self,src,dst):
+        print("\tcopy filetree {} to {}".format(src,dst))
+        shutil.copytree(src, dst, symlinks=True)
