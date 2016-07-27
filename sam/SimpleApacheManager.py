@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-
+import getpass
 import sys
 # check if python3 is used (required)
+import pwd
+
 if sys.version_info < (3, 0):
     sys.stdout.write("\nSorry, requires Python 3.x, not Python 2.x\n\n")
     sys.exit(1)
@@ -31,10 +33,12 @@ class SimpleApacheManager():
     __config_file__ = "config.ini"
     __config_file_paths__ = [ os.path.abspath("."),os.path.expanduser("~/.sam/"),"/etc/sam/" ]
     __os_service__ = None
+    __admin_commands__ = ['user','system']
 
 
     def __init__(self):
-        print("\nExecuting SimpleApacheManager version "+self.__version__+"\n")
+        # identify if sudo permissions are given and get the real user name
+        self.real_user=self.getRealUserCheckSudo()
         # initalize services and os worker
         self.os_services = [OSDebian8(), OSUbuntu1604()]
         self.services = { "apache":ApacheService(),
@@ -42,15 +46,11 @@ class SimpleApacheManager():
                           "template":TemplateService(),
                           "system":SystemService()
                           }
-
-
         # init all action classes
         self.commands = {"domain":DomainCommand(),
                          "system":SystemCommand(),
                          "user":UserCommand()
                          }
-        # parse command line args
-        self.args=self.parseParameters()
         # search for config.ini
         configFound=False
         for search_path in self.__config_file_paths__:
@@ -61,24 +61,46 @@ class SimpleApacheManager():
                 self.config = configparser.ConfigParser()
                 self.config.read(self.__config_file__)
                 configFound=True
-            else:
-                if self.verbose():
-                    print("\tfound no config.ini in folder "+search_path)
         if not configFound:
             raise Exception("Could not find the file "+self.__config_file__)
         # find working os implementation
         if not self.findWorkingOSImpl():
             raise Exception("OperationSystem "+','.join(platform.linux_distribution())+" is not supported by SimpleApacheManager. Abort.")
+        # check if this user has permission to trigger user add/list commands
+        self.is_sam_user=(self.real_user in self.services['user'].listLinkedUsers(self.services['system'],self.services['template'].folder_vhost_user))
+        self.admin_permission=(self.real_user == 'root'
+                               or self.real_user == self.config['system']['admin_user'])
+        # parse command line args
+        self.args=self.parseParameters()
         # do what is needed
         self.execute(self.args)
 
+    """
+    Check if the script has been called with sudo permissions or as root.
+    Return the username that executed the script (the user that called sudo)
+    or root if sudo was not used.
+    """
+    def getRealUserCheckSudo(self):
+        real_user=''
+        process_user=pwd.getpwuid(os.getuid())[0]
+        # identify user executing this script
+        try:
+            real_user=os.environ['SUDO_USER']
+        except KeyError:
+            # it is not user with sudo roghts, it is a root user
+            real_user=os.getenv('USER')
+        print("Script executed with {} permissions from user {}".format(process_user,real_user))
+        if not os.geteuid() == 0:
+            msg="Script needs sudo permissions, please run:\nsudo samcli"
+            print(msg)
+            sys.exit(1)
+        # check if we have sudo rights
+        return real_user
 
     """
     Find the right IOperationSystem implementation
     """
     def findWorkingOSImpl(self):
-        if self.verbose():
-            print("Identify OperationSystem")
         for os in self.os_services:
             if os.check(self.config):
                 self.__os_service__=os
@@ -101,8 +123,6 @@ class SimpleApacheManager():
     :return Exit code 0 if success, else value > 0
     """
     def execute(self,args):
-        if self.verbose():
-            pprint(args)
         print()
         if args.command == 'install':
             self.install()
@@ -113,9 +133,9 @@ class SimpleApacheManager():
             return
         # execute the right Actions class
         for action_key in self.commands.keys():
-            action=self.commands[action_key]
-            if action.getName() == args.command:
-                action.process(args,self.services)
+            command=self.commands[action_key]
+            if command.getName() == args.command:
+                command.process(self.services,self.config,args)
                 print()
                 return
         raise Exception("Command "+args.command+" cannot be processed. No module that handle it found.")
@@ -129,15 +149,21 @@ class SimpleApacheManager():
         # create the command line parameters parser
         parser = argparse.ArgumentParser(description='SimpleApacheManager version ' + self.__version__ + '.')
         parser.add_argument('-v',action="store_true",help='run with verbose output.')
-        parser.add_argument('--testrun', action="store_true",
-                            help='if set program does a test-run without modifying anything.')
+        #parser.add_argument('--testrun', action="store_true",
+        #                    help='if set program does a test-run without modifying anything.')
         # subparsers for second argument
         subparsers = parser.add_subparsers(dest = 'command', title='sub command help', help = 'available subcommands')
         subparsers.required=True
         # let each action class add its parameter to the parser
         for action_key in self.commands.keys():
             action = self.commands[action_key]
-            action.addParserArgs(subparsers)
+            if action_key in self.__admin_commands__:
+                if self.admin_permission:
+                    # only add parameters if admin permission is given
+                    action.addParserArgs(subparsers)
+            else:
+                # no special permission needed
+                action.addParserArgs(subparsers)
         # Parse the command line arguments
         try:
             parsedArgs=parser.parse_args()
@@ -175,10 +201,6 @@ class SimpleApacheManager():
     """
     def install(self):
         print("Install SimpleApacheManager on "+self.__os_service__.name())
-        # do we have sudo rights?
-        if not self.services['user'].sudoPermissionsAvailable():
-            print("To install SimpleApacheManager run script with sudo. Abort.")
-            sys.exit(1)
         # install required OS packages if needed
         self.__os_service__.install(self.config)
         # Delegate SimpleApacheManger installation to SystemCommand class
@@ -191,15 +213,14 @@ class SimpleApacheManager():
         print("\nExample usage:\n")
         for action_key in self.commands.keys():
             action = self.commands[action_key]
-            for example in action.getExampleUsage():
-                print(example)
-        print(' $ {:<45s} : {}'.format('sam check ','Check environment and all service and OS modules.'+'\n'))
-
-    """
-    Shorthand for verbose
-    """
-    def verbose(self):
-        return self.args.v
+            if action_key in self.__admin_commands__:
+                if self.admin_permission:
+                    for example in action.getExampleUsage():
+                        print(example)
+            else:
+                for example in action.getExampleUsage():
+                    print(example)
+        print()
 
 # programm entry point
 def main():

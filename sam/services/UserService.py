@@ -7,34 +7,17 @@ import pwd
 import grp
 
 __author__ = 'Sebastian Lutter'
-#TODO: clean old code
+
 from pwd import getpwnam
 from grp import getgrnam
 
 from sam.services.IService import IService
-from sam.services.SystemService import SystemService
+
 
 class UserService(IService):
 
     def __init__(self):
         pass
-
-    def execute(self,jobtype):
-        #TODO: split into a method for each (list, add)
-        if jobtype == self.job.TYPE_USER_LIST:
-            userList=self.listLinkedUsers()
-            if len(userList) == 0:
-                print("No users found")
-            else:
-                print("\tThe following users are known to the phoenix toolkit:\n")
-                for u in userList:
-                    print("\t "+u)
-            return True
-        elif jobtype == self.job.TYPE_USER_ADD:
-            userName=alias = sys.argv[3].lower()
-            return self.__addNewUser__(userName)
-        else:
-            print("User module does not know jobtype "+jobtype)
 
     def check(self,config):
         pass
@@ -49,18 +32,26 @@ class UserService(IService):
         pass
 
     """
-    Returns true if script has been called with sudo permissions.
-    """
-    def sudoPermissionsAvailable(self):
-        # check if we have sudo rights
-        return os.geteuid() == 0
-
-    """
     Add the user to the group with sudo permissions to samcli.
     Checks if user exists in OS.
     """
-    def addNewUser(self, username):
-        pass
+    def addNewUser(self, username,tpl_service,sys_service,config):
+        print("\tadd new user "+username)
+        if username in self.listLinkedUsers(sys_service,tpl_service.folder_vhost_user):
+            print("\t\tuser "+username+" does already exist. Abort.")
+            return False
+        # construct path to template
+        tpl_path=os.path.join(config['system']['folder_sam_source_dir'], tpl_service.folder_tpl_user)
+        user_domain_path=os.path.join("/home", username, "web_domains")
+        sys_service.copyFolderRecursive(tpl_path, user_domain_path)
+        # symlink users web_domains folder to /var/www/users/$USERNAME
+        sys_service.createSymlink(user_domain_path, os.path.join(tpl_service.folder_vhost_user, username))
+        # change user and group of created folder
+        sys_service.chownRecursive(user_domain_path,username,config['system']['admin_group'])
+        #add user to phoenix_toolkit group if not already member of
+        if not self.checkIfUserIsInGroup(username,config['system']['admin_group']):
+            self.addUserToGroup(username,config['system']['admin_group'],sys_service)
+        return True
 
     """
     Add the given user to the given group
@@ -83,8 +74,6 @@ class UserService(IService):
         # check if user is in group
         return group in groups
 
-    def __listLinkedUsers__(self):
-        pass
 
     """
     check if a user exists in the system
@@ -115,3 +104,17 @@ class UserService(IService):
         if exitcode != 0:
             print("Failed to add group " + group + " to operation system.\nstdout="+stdout+"\nstderr=" + stderr)
             sys.exit(1)
+
+    def listLinkedUsers(self,sys_service,user_folder):
+        print("Collecting all users that are part of the SimpleApacheManager system")
+        out = []
+        for folder in sys_service.getFolderList(user_folder):
+            out.append(os.path.basename(folder))
+        return out
+
+    """
+    Check if user is part of the SimpleApacheManager OS group (to get sudo access)
+    """
+    def checkIfSAMUserExists(self,username):
+        listAddedUsers = self.listLinkedUsers()
+        return username in listAddedUsers

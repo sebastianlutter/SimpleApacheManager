@@ -3,6 +3,11 @@
 
 import collections
 import re
+
+import os
+
+import sys
+
 from sam.commands.ICommand import IAction
 """
 Add or remove system users from beeing part of the SimpleApacheManager tool to manage their own domains and stuff.
@@ -81,9 +86,9 @@ class UserCommand(IAction):
         keys=list(self.actions.keys())
         if args.sub_command == "add":
             self.validateParam("user",args.user)
-            self.commandAdd(args.user)
+            self.commandAdd(args.user,services,config)
         elif args.sub_command == "list":
-            self.commandList()
+            self.commandList(services['system'],services['template'].folder_vhost_user)
         else:
             raise Exception("Unknown sub_command " + args.sub_command)
 
@@ -91,12 +96,19 @@ class UserCommand(IAction):
         return "user"
 
 
-    def commandAdd(self,user):
+    def commandAdd(self,user,services,config):
+        # check if OS know this user
+        if not services['user'].checkIfUserExistsInOS(user):
+            print('User {} does not exist in your OS. Please create the user manually. Abort')
+            sys.exit(1)
+        # Is user already part of the sam toolkit?
+        if services['user'].checkIfSAMUserExists(user):
+            print('User {} is already known to the SimpleApacheManager. Abort')
+            sys.exit(1)
         print("Add system user "+user+" to the list of SimpleApacheManager user.")
-        #TODO: Implement
-        pass
+        services['user'].addNewUser(user,services['template'],services['system'],config)
 
-    def commandList(self):
-        print("Show the list of SimpleApacheManager user.")
-        #TODO: Implement
-        pass
+    def commandList(self,sys_service,path):
+        print("Show the list of SimpleApacheManager users:")
+        for user in sys_service.getFolderList(path):
+            print('\t'+os.path.basename(user))

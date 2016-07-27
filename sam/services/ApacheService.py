@@ -37,7 +37,6 @@ class ApacheService(IService):
                 print(msg)
                 raise Exception(msg)
             # everything seems ok, reload apache service
-            print(" -- reload apache2 service")
             exitcode, stdout, stderr = sys_service.run_shell_commando(["service", "apache2", "reload"])
             if exitcode != 0:
                 print("stdout={}\nstderr={}".format(stdout,stderr))

@@ -1,12 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import pwd
-
 import grp
-
 import shutil
-
 import time
+import re
 
 from sam.services.IService import IService
 import subprocess
@@ -124,7 +122,7 @@ class SystemService(IService):
             print("\tsymlink " + linkname + " --> " + src)
             os.symlink(src, linkname)
         else:
-            print("\t\tdo not touch existing link " + src)
+            print("\tdo not touch existing link " + linkname)
         return os.path.islink(linkname)
 
     """
@@ -170,3 +168,37 @@ class SystemService(IService):
     def copyFolderRecursive(self,src,dst):
         print("\tcopy filetree {} to {}".format(src,dst))
         shutil.copytree(src, dst, symlinks=True)
+
+    """
+    Return the list of folders that are inside of the given path
+    :return list() of folders that are part of given path
+    """
+    def getFolderList(self, path):
+        if not os.path.isdir(path):
+            return ["Folder "+path+" was not found. Cannot list content."]
+        # make path absolute
+        path = os.path.abspath(path)
+        # get list of directories
+        inodes = os.listdir(path)
+        outList = []
+        # check each item, only collect folders
+        for i in inodes:
+            tmp = os.path.join(path, i)
+            if os.path.isdir(tmp):
+                outList.append(tmp)
+        return outList
+
+    """
+    Add the needed entry for the sam_admin group in /etc/sudo
+    """
+    def addSudoersEntry(self,group,samcli_path):
+        # check if entry already exists
+        with open('/etc/sudoers','r') as file:
+            if re.search('^.*{0}.*$'.format(re.escape(group)), file.read(), flags=re.M):
+                print('\tgroup entry '+group+' in /etc/sudoers already exists. Skip adding it.')
+                return True
+        # open file in append mode and add line
+        sudoers_line='%{} ALL=NOPASSWD: {}'.format(group,samcli_path)
+        print("\tadding sudoers entry in file /etc/sudoers")
+        with open('/etc/sudoers', 'a') as file:
+            file.write(sudoers_line+'\n')
