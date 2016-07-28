@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import sys
 
+import os
+
 from sam.services.IService import IService
 
 __author__ = 'Sebastian Lutter'
@@ -52,3 +54,67 @@ class ApacheService(IService):
             print(msg)
             raise Exception(msg)
         return True
+
+    """
+    Generate self signed server certificates for the apache webserver
+    """
+    def generateSSLCertsSelfSigned(self,out_folder,domain,sys_service,config):
+        print("\tgenerate SSL certs for "+domain)
+        pass
+    """
+        # check if out_folder exists
+        if not os.path.isdir(out_folder):
+            raise Exception('Cannot create SSL certs in {}, folder does not exist.'.format(out_folder))
+        CERT_FILE = os.path.join(out_folder,domain,'.crt')
+        KEY_FILE = os.path.join(out_folder,domain,'.key')
+        # create a key pair
+        k = crypto.PKey()
+        k.generate_key(crypto.TYPE_RSA, 2048)
+        # create a self-signed cert
+        cert = crypto.X509()
+        cert.get_subject().C = "DE"
+        cert.get_subject().ST = "Berlin"
+        cert.get_subject().L = "Berlin"
+        cert.get_subject().O = domain
+        cert.get_subject().OU = domain+' owner'
+        cert.get_subject().CN = domain
+        cert.set_serial_number(1000)
+        cert.gmtime_adj_notBefore(0)
+        cert.gmtime_adj_notAfter(10*365*24*60*60)
+        cert.set_issuer(domain)
+        cert.set_pubkey(k)
+        cert.sign(k, 'sha1')
+        with open(CERT_FILE, "wt") as cert:
+            cert.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+        with open(KEY_FILE, "wt") as key:
+            key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
+"""
+
+
+    """
+    Get the vhosts folder of the given real user. If root or admin it
+    is /var/www/vhosts, else it is /home/USER/web_domains
+    """
+    def getVHostFolderFor(self,user,tpl_service,config):
+        # is this root or admin?
+        if user == 'root' or user == config['system']['admin_user']:
+            # admin goes to /var/www/vhosts/
+            return tpl_service.folder_vhost
+        else:
+            # user have their own vhosts folder
+            return os.path.join('/home',user,'webdomains/')
+
+
+    """
+    Get the vhosts folder of the given real user. If root or admin it
+    is /var/www/vhosts, else it is /home/USER/web_domains
+    :return Tuple containing user and group
+    """
+    def getOwnershipFor(self,user,config):
+        # is this root or admin?
+        if user == 'root' or user == config['system']['admin_user']:
+            # return tuple with (www-data,www-data)
+            return (config['domain']['default_user'],config['domain']['default_group'])
+        else:
+            # return (username,sam_group)
+            return (user,config['system']['admin_group'])

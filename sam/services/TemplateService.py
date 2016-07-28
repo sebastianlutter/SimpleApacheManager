@@ -98,16 +98,16 @@ class TemplateService(IService):
     The new vhost is not registered in the global config afterwards. Just the skeleton is
     copied and values filled in.
     """
-    def generateVHostTemplate(self,domain,config,sys_service,user):
+    def generateVHostTemplate(self,domain,config,sys_service,user,vhost_dir):
         # first of all copy vhost template to dest dir
-        vhost_dir = os.path.join(self.folder_tpl_vhost, domain)
+        #vhost_dir = os.path.join(self.folder_tpl_vhost, domain)
         tpl_dir = os.path.join(config['system']['folder_sam_source_dir'],self.folder_tpl_vhost)
         if not os.path.isdir(tpl_dir):
             print("Template folder "+tpl_dir+" does not exist. Abort.")
             raise Exception("Template folder "+tpl_dir+" does not exist. Abort.")
         if  not os.path.isdir(tpl_dir):
-            print("Desctination folder "+tpl_dir+" does already exist. Abort.")
-            raise Exception("Desctination folder "+tpl_dir+" does already exist. Abort.")
+            print("Destination folder "+tpl_dir+" does already exist. Abort.")
+            raise Exception("Destination folder "+tpl_dir+" does already exist. Abort.")
         # copy the filetree from tpl to its destination
         sys_service.copyFolderRecursive(tpl_dir,vhost_dir)
         # path of the new vhost configuration
@@ -116,7 +116,7 @@ class TemplateService(IService):
         mapping = dict()
         mapping[self.var_ip] = config['system']['ip']
         mapping[self.var_domain] = domain
-        mapping[self.self.var_admin_mail] = config['DEFAULT']['mail']
+        mapping[self.var_admin_mail] = config['DEFAULT']['mail']
         mapping[self.var_user] = user
         mapping[self.var_group] = config['system']['admin_group']
         # Die Zertifikate für diesen VHOST setzen
@@ -124,6 +124,9 @@ class TemplateService(IService):
         mapping[self.var_ssl_key] = self.folder_vhost + "/" + domain + "/certs/" + domain + ".key"
         # now apply the mapping and store the new config file
         self.__fillTemplateFromMapping__(vhost_conf_path, vhost_conf_path, mapping)
+        # generate a index.html file with domain infos
+        self.__generateIndexHtml__(domain,None)
+
 
     """
     Copy the default vhost to its destination in /var/www/vhosts/default
@@ -133,6 +136,9 @@ class TemplateService(IService):
         tpl_dir=os.path.join(sam_src_folder,self.folder_tpl_vhost_default)
         # destination /var/wwW/vhosts/default
         dest_dir=os.path.join(self.folder_vhost,'default')
+        if os.path.exists(dest_dir):
+            print('\tskip copy of default vhost {}, it already exists.'.format(dest_dir))
+            return
         sys_service.copyFolderRecursive(tpl_dir,dest_dir)
 
 
@@ -141,13 +147,34 @@ class TemplateService(IService):
     '''
     def __fillTemplateFromMapping__(self, tplfile,destfile, mapping):
         print("\tload template {}, fill it, and store it in {}".format(tplfile,destfile))
-        f = open(tplfile)
-        # load template file
-        text = Template(f.read())
-        # replace variables in string
-        text = text.safe_substitute(mapping)
-        f.close()
+        with open(tplfile) as f:
+            # load template file
+            text = Template(f.read())
+            # replace variables in string
+            text = text.safe_substitute(mapping)
         # now override the file with the modified text
-        f = open(destfile, "w")
-        f.writelines(text)
-        f.close()
+        with open(destfile, "w") as f:
+            f.writelines(text)
+
+    '''
+    Generate a domain or subdomain index.html file. Depending on subdomain is filled
+    the template and destination folder is choosen.
+    '''
+    def __generateIndexHtml__(self, domain, subdomain=None):
+        if subdomain == None:
+            tpl=os.path.join(self.folder_tpl_vhost,"httpdocs/index.html")
+            file=os.path.join(self.folder_vhost,domain, "httpdocs/index.html")
+        else:
+            tpl = os.path.join(self.folder_tpl_subdomain, "httpdocs/index.html")
+            file = os.path.join(self.folder_vhost, domain,'subdomain',subdomain,"httpdocs/index.html")
+        with open(file, "r") as f:
+                vhostConf = Template(f.read())
+        # Mapping aufbauen
+        mapping = dict()
+        mapping[self.var_domain] = domain
+        mapping[self.var_subdomain] = subdomain
+        # Jetzt Variablen ersetzen
+        newIndexHtml = vhostConf.safe_substitute(mapping)
+        # Datei zum schreiben öffnen
+        with open(file, "w") as f:
+            f.  write(newIndexHtml)

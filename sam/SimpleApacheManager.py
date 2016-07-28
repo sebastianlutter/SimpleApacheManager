@@ -135,7 +135,7 @@ class SimpleApacheManager():
         for action_key in self.commands.keys():
             command=self.commands[action_key]
             if command.getName() == args.command:
-                command.process(self.services,self.config,args)
+                command.process(self.services,self.config,args,self.real_user)
                 print()
                 return
         raise Exception("Command "+args.command+" cannot be processed. No module that handle it found.")
@@ -202,9 +202,14 @@ class SimpleApacheManager():
     def install(self):
         print("Install SimpleApacheManager on "+self.__os_service__.name())
         # install required OS packages if needed
-        self.__os_service__.install(self.config)
+        try:
+            self.__os_service__.install(self.config)
+        except:
+            print("OS package install failed.\n\n Please manually install these packages:")
+            print("apt-get install "+' '.join(self.__os_service__.required_packages))
+            print()
         # Delegate SimpleApacheManger installation to SystemCommand class
-        self.commands['system'].process(self.services,self.config,self.args)
+        self.commands['system'].process(self.services,self.config,self.args,self.real_user)
 
     '''
     Print example usage strings (from subparsers)

@@ -82,7 +82,7 @@ class UserCommand(IAction):
     '''
     Process an action depending on the given args
     '''
-    def process(self,services,config,args):
+    def process(self,services,config,args, real_user):
         keys=list(self.actions.keys())
         if args.sub_command == "add":
             self.validateParam("user",args.user)
@@ -102,7 +102,7 @@ class UserCommand(IAction):
             print('User {} does not exist in your OS. Please create the user manually. Abort')
             sys.exit(1)
         # Is user already part of the sam toolkit?
-        if services['user'].checkIfSAMUserExists(user):
+        if services['user'].checkIfSAMUserExists(user,services['system'],services['template']):
             print('User {} is already known to the SimpleApacheManager. Abort')
             sys.exit(1)
         print("Add system user "+user+" to the list of SimpleApacheManager user.")

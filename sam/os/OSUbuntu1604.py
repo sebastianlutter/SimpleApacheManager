@@ -13,7 +13,8 @@ class OSUbuntu1604(IOperationSystem):
 
     required_packages = ["libapache2-mpm-itk",
                          "apache2",
-                         "libapache2-mod-php"
+                         "libapache2-mod-php",
+                         "libffi-dev"
                          ]
 
     def __init__(self):

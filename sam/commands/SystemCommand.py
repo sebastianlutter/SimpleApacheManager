@@ -47,7 +47,7 @@ class SystemCommand(IAction):
     '''
     Process an action depending on the given args
     '''
-    def process(self, services, config, args):
+    def process(self, services, config, args, real_user):
         if args.command=="check":
             self.commandStatus()
         elif args.command=="install":
@@ -64,15 +64,16 @@ class SystemCommand(IAction):
     and global configurations.
     """
     def commandInstall(self,services,config):
-        sys_user=config['system']['admin_user']
-        sys_group=config['system']['admin_group']
+        sys_user=config['domain']['default_user']
+        sys_group=config['domain']['default_group']
+        admin_group=config['system']['admin_group']
         print("Install SimpleApacheManager in your OS.")
         # make sure user exists, abort if not
         if not services['user'].checkIfUserExistsInOS(sys_user):
             print("The given admin_user "+sys_user+" does not exist in your OS. \nPlease create it manually (i.e.: sudo adduser "+sys_user+").")
             sys.exit(1)
         else:
-            print("Given admin_user "+sys_user+" does exist in the OS.")
+            print("Given default domain user "+sys_user+" exists in the OS.")
         # make sure group exists, add it if not
         if not services['user'].checkIfGroupExistsInOS(sys_group):
             # add group to OS
@@ -82,7 +83,7 @@ class SystemCommand(IAction):
         sam_wrapper_file=os.path.join(config['system']['folder_sam_source_dir'],config['system']['file_wrapper_script'])
         services['system'].createSymlink(sam_wrapper_file,config['system']['file_samcli_link'])
         # add sudoers entry
-        services['system'].addSudoersEntry(sys_group,config['system']['file_samcli_link'])
+        services['system'].addSudoersEntry(admin_group,config['system']['file_samcli_link'])
         # Now create the folder structure needed
         print("Creating folder structure:")
         config_dict=dict(config['system'])
@@ -112,5 +113,3 @@ class SystemCommand(IAction):
         services['template'].createGlobalSymlink(config['system']['folder_sam_source_dir'],services['system'])
         # now reload the apache configuration
         services['apache'].reloadApache(services['system'])
-        # now create admin_user environment
-        services['user'].addNewUser(sys_user,services['template'],services['system'],config['system']['folder_sam_source_dir'],config)

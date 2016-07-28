@@ -36,11 +36,12 @@ setup(name='SimpleApacheManager',
       install_requires=[
           'configparser',
           'pip',
-          'argparse'
+          'argparse',
+          'pyOpenSSL'
       ],
-      entry_points = {
-        "console_scripts": ['samcli = sam.SimpleApacheManager:main']
-      },
+#      entry_points = {
+#        "console_scripts": ['samcli = sam.SimpleApacheManager:main']
+#      },
 #      package_dir = {'': 'sam'}
 #      scripts=['scripts/install.sh']
 #      package_data={

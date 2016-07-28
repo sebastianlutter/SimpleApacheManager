@@ -106,7 +106,6 @@ class UserService(IService):
             sys.exit(1)
 
     def listLinkedUsers(self,sys_service,user_folder):
-        print("Collecting all users that are part of the SimpleApacheManager system")
         out = []
         for folder in sys_service.getFolderList(user_folder):
             out.append(os.path.basename(folder))
@@ -115,6 +114,7 @@ class UserService(IService):
     """
     Check if user is part of the SimpleApacheManager OS group (to get sudo access)
     """
-    def checkIfSAMUserExists(self,username):
-        listAddedUsers = self.listLinkedUsers()
+    def checkIfSAMUserExists(self,username,sys_service,tpl_service):
+        listAddedUsers = self.listLinkedUsers(sys_service,tpl_service.folder_vhost_user)
         return username in listAddedUsers
+

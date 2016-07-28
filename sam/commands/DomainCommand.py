@@ -3,6 +3,9 @@
 
 import collections
 import re
+
+import os
+
 from sam.commands.ICommand import IAction
 """
 Domain commands to modify vhost settings (i.e. create vhost with SSL or add alias )
@@ -105,10 +108,13 @@ class DomainCommand(IAction):
     Process an action depending on the given args
     '''
 
-    def process(self, services, config, args):
+    def process(self, services, config, args, real_user):
+        # set the real user executed this script as class attribut
+        self.real_user=real_user
+        # call the right action
         if args.sub_command=="add":
             self.validateParam("domain",args.domain)
-            self.commandAdd(args.domain)
+            self.commandAdd(args.domain,services,config,real_user)
         elif args.sub_command=="del":
             self.validateParam("domain", args.domain)
             self.commandDel(args.domain)
@@ -133,13 +139,28 @@ class DomainCommand(IAction):
         else:
             raise Exception("Unknown sub_command "+args.sub_command)
 
+
+
+
     def commandList(self,domain):
         print("DomainActions triggered: list")
         #TODO: implement
 
-    def commandAdd(self,domain):
-        print("Create vhost for " + domain)
-        #TODO: implement
+    def commandAdd(self,domain,services,config,real_user):
+        # construct dest path
+        dest_folder=os.path.join(services['apache'].getVHostFolderFor(real_user,services['template'],config),domain)
+        print("Create vhost for {} in folder {}".format(domain,dest_folder))
+        # copy and fill template
+        services['template'].generateVHostTemplate(domain,config,services['system'],real_user,dest_folder)
+        # generate the SSL certs for this domain
+        ssl_cert_folder=os.path.join(dest_folder,'certs')
+        services['apache'].generateSSLCertsSelfSigned(ssl_cert_folder,domain,services['system'],config)
+        # now chown the whole folder tree to the given ownership
+        user,group = services['apache'].getOwnershipFor(real_user,config)
+        services['system'].chownRecursive(dest_folder,user,group)
+        # add entry in /etc/apache2/sites-enabled/000-default.conf
+
+
 
     def commandDel(self,domain):
         print("Delete existing vhost " + domain)
