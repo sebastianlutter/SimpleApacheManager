@@ -111,5 +111,9 @@ class SystemCommand(IAction):
         services['template'].createGlobalApacheConfig(config,services['system'])
         # unlink existing sites-enabled/000-default symlink and replace with new link to sam config
         services['template'].createGlobalSymlink(config['system']['folder_sam_source_dir'],services['system'])
+        # LimitUID setting from apache mpm itk worker defaults to 1000 to 6000.
+        # We use the www-data user as default user in /var/www/vhosts, and its uid=33.
+        # So we relax this settings in the apache security config
+        services['apache'].relaxLimitUIDRangeMpmItk()
         # now reload the apache configuration
         services['apache'].reloadApache(services['system'])

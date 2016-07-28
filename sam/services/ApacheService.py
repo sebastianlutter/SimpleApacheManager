@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+import re
 import sys
 
 import os
@@ -28,7 +29,7 @@ class ApacheService(IService):
     """
     Check the apache configuration and reload apache configuration if check is ok.
     """
-    def reloadApache(self,sys_service):
+    def reloadApache(self,sys_service,restart=False):
         # Testen, ob die Konfiguration noch funktioniert
         try:
             print("\tCheck apache configuration for errors")
@@ -39,10 +40,11 @@ class ApacheService(IService):
                 print(msg)
                 raise Exception(msg)
             # everything seems ok, reload apache service
-            exitcode, stdout, stderr = sys_service.run_shell_commando(["service", "apache2", "reload"])
+            command = 'restart' if restart else 'reload'
+            exitcode, stdout, stderr = sys_service.run_shell_commando(["service", "apache2", command])
             if exitcode != 0:
                 print("stdout={}\nstderr={}".format(stdout,stderr))
-                msg="Apache coofiguration reload failed. Please fix the configuration manually and restart apache server."
+                msg="Apache coniguration reload failed. Please fix the configuration manually and restart apache server."
                 print(msg)
                 raise Exception(msg)
         except OSError:
@@ -54,6 +56,7 @@ class ApacheService(IService):
             print(msg)
             raise Exception(msg)
         return True
+
 
     """
     Generate self signed server certificates for the apache webserver
@@ -96,13 +99,15 @@ class ApacheService(IService):
     is /var/www/vhosts, else it is /home/USER/web_domains
     """
     def getVHostFolderFor(self,user,tpl_service,config):
+
         # is this root or admin?
-        if user == 'root' or user == config['system']['admin_user']:
+        if user == 'root' or user == config['system']['admin_user'] \
+                or user == config['domain']['default_user']:
             # admin goes to /var/www/vhosts/
             return tpl_service.folder_vhost
         else:
             # user have their own vhosts folder
-            return os.path.join('/home',user,'webdomains/')
+            return os.path.join('/home',user,'web_domains/')
 
 
     """
@@ -112,9 +117,61 @@ class ApacheService(IService):
     """
     def getOwnershipFor(self,user,config):
         # is this root or admin?
-        if user == 'root' or user == config['system']['admin_user']:
+        if user == 'root' or user == config['system']['admin_user']\
+                or user == config['domain']['default_user']:
             # return tuple with (www-data,www-data)
             return (config['domain']['default_user'],config['domain']['default_group'])
         else:
             # return (username,sam_group)
             return (user,config['system']['admin_group'])
+
+
+    '''
+     Append an include line on the global apache config to include
+     a vhost config there
+     '''
+    def addIncludeToGlobalConf(self, includePath, tpl_service):
+        configFile=tpl_service.file_etc_apache_conf_global
+        key=tpl_service.var_etc_apache_include
+        print("\tappend include " + includePath + " to " + configFile)
+        # load template file
+        with open(configFile, "r") as f:
+            apacheConfString = f.read()
+        # append include
+        apacheConfString = apacheConfString.replace(key, "Include " + includePath + "\n" + key)
+        # replace key in template with entry and key
+        with open(configFile, "w") as f:
+            f.write(apacheConfString)
+
+    """
+    Deletes a include entry made by self.addIncludeToGlobalConf
+    """
+    def deleteIncludeFromGlobalConf(self, includePath, tpl_service):
+        configFile = tpl_service.file_etc_apache_conf_global
+        print("\tremove include " + includePath + " from " + configFile)
+        # Load content of file
+        with open(configFile, "r") as f:
+            apacheConfString = f.read()
+        # remove the include from the string
+        apacheConfString = apacheConfString.replace("Include " + configFile + "\n", "");
+        with open(configFile, "w") as f:
+            f.write(apacheConfString)
+
+    """
+    Since Apache 2.4 the mpm itk worker has a user id limit from 1000 to 6000. www-data user
+    has id 33 and is not allowed.
+    Add configuration to /etc/apache2/conf-enabled/security.conf to relax this to 1 to 6000
+    """
+    def relaxLimitUIDRangeMpmItk(self):
+        setting='<IfModule mpm_itk_module>\n\tLimitUIDRange 1 6000\n\tLimitGIDRange 1 6000\n</IfModule>\n'
+        file_path='/etc/apache2/conf-available/security.conf'
+        # check if entry already exists
+        with open(file_path,'r') as file:
+            if re.search('^.*LimitUIDRange.*$', file.read(), flags=re.M):
+                print('\tLimitUIDRange setting exists in {}. Abort.'.format(file_path))
+                return False
+        # open file in append mode and add line
+        print("\tadding relaxed LimitUIDRange setting to file "+file_path)
+        with open(file_path,'a') as file:
+            file.write(setting+'\n')
+            return True

@@ -177,4 +177,5 @@ class TemplateService(IService):
         newIndexHtml = vhostConf.safe_substitute(mapping)
         # Datei zum schreiben öffnen
         with open(file, "w") as f:
-            f.  write(newIndexHtml)
+            f.write(newIndexHtml)
+

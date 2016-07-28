@@ -6,6 +6,8 @@ import re
 
 import os
 
+import sys
+
 from sam.commands.ICommand import IAction
 """
 Domain commands to modify vhost settings (i.e. create vhost with SSL or add alias )
@@ -110,11 +112,11 @@ class DomainCommand(IAction):
 
     def process(self, services, config, args, real_user):
         # set the real user executed this script as class attribut
-        self.real_user=real_user
+        self.real_user=real_user if real_user != 'root' else config['domain']['default_user']
         # call the right action
         if args.sub_command=="add":
             self.validateParam("domain",args.domain)
-            self.commandAdd(args.domain,services,config,real_user)
+            self.commandAdd(args.domain,services,config,self.real_user)
         elif args.sub_command=="del":
             self.validateParam("domain", args.domain)
             self.commandDel(args.domain)
@@ -149,6 +151,10 @@ class DomainCommand(IAction):
     def commandAdd(self,domain,services,config,real_user):
         # construct dest path
         dest_folder=os.path.join(services['apache'].getVHostFolderFor(real_user,services['template'],config),domain)
+        # Abort if it already exists
+        if os.path.isdir(dest_folder):
+            print("The domain {} already exists in folder {}. Abort.".format(domain,dest_folder))
+            sys.exit(1)
         print("Create vhost for {} in folder {}".format(domain,dest_folder))
         # copy and fill template
         services['template'].generateVHostTemplate(domain,config,services['system'],real_user,dest_folder)
@@ -159,6 +165,17 @@ class DomainCommand(IAction):
         user,group = services['apache'].getOwnershipFor(real_user,config)
         services['system'].chownRecursive(dest_folder,user,group)
         # add entry in /etc/apache2/sites-enabled/000-default.conf
+        vhost_config_file=os.path.join(dest_folder,'conf/httpd.include')
+        services['apache'].addIncludeToGlobalConf(vhost_config_file,services['template'])
+        # check apache service and reload
+        try:
+            services['apache'].reloadApache(services['system'])
+        except:
+            # apache failed to reload, remove include again and restart
+            print("ERROR: Apache was not able to reload the config. Remove include entry and try again")
+            services['apache'].deleteIncludeFromGlobalConf(vhost_config_file,services['template'])
+            print("Try to restart apache server after last added include has been removed from apache configuration..")
+            services['apache'].reloadApache(services['system'],True)
 
 
 
