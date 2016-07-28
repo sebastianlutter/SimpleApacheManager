@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import re
+import string
 import sys
 
 import os
@@ -10,6 +11,10 @@ from sam.services.IService import IService
 __author__ = 'Sebastian Lutter'
 
 class ApacheService(IService):
+
+    script_ssl_cert_creation='scripts/generateSSLcerts.sh'
+
+    needed_modules=['ssl']
 
     def __init__(self):
         pass
@@ -63,7 +68,19 @@ class ApacheService(IService):
     """
     def generateSSLCertsSelfSigned(self,out_folder,domain,sys_service,config):
         print("\tgenerate SSL certs for "+domain)
-        pass
+        company=domain
+        email=config['DEFAULT']['mail']
+        out_path = os.path.join(out_folder, domain)
+        print("\ncreate SSL certificate for " + domain + " in folder " + out_path)
+        # crete cert by calling script
+        script_path=os.path.join(config['system']['folder_sam_source_dir'],self.script_ssl_cert_creation)
+        exitcode,stdout,stderr=sys_service.run_shell_commando([script_path, company, domain, email, out_path])
+        if exitcode!=0:
+            msg='Error creating cert for domain {} using script {}.\nstdout={}\nstderr={}'.format(domain,stdout,stderr)
+            print(msg)
+            raise Exception(msg)
+        else:
+            print(stdout)
     """
         # check if out_folder exists
         if not os.path.isdir(out_folder):
@@ -175,3 +192,42 @@ class ApacheService(IService):
         with open(file_path,'a') as file:
             file.write(setting+'\n')
             return True
+
+    """
+    Enable needed modules of the apache webserver
+    """
+    def enableNeededModules(self,sys_service):
+        # get list of enabled modules
+        exitcode,stdout,stderr = sys_service.run_shell_commando(['apache2ctl','-M'])
+        if exitcode!=0:
+            msg="Was not able to call apache2ctl -M.\nstdout={}\nstderr={}".format(stdout,stderr)
+            print(msg)
+            raise Exception(msg)
+        # check stdout for enabled module names
+        missing=list()
+        modules_enabled_list=list()
+        for line in stdout.split('\n'):
+            # format of a line: module_name (type)
+            # only add module_name
+            modules_enabled_list.append(line.split(' ')[0])
+        # now check each needed module against the enabled list
+        for needed_module in self.needed_modules:
+            if not needed_module in modules_enabled_list:
+                print('\tapache module {} is not enabled'.format(needed_module))
+                missing.append(needed_module.split(' ')[0])
+            else:
+                print('\tapache module {} is already enabled. Skip it.'.format(needed_module))
+        # skip here if there are no missing modules
+        if len(missing)==0:
+            print('\tall needed apache modules are enabled. No need to enable modules. ')
+            return
+        # enable each missing needed module using a2enmod
+        for missing_module in missing:
+            # enable the needed modules
+            exitcode,stdout,stderr=sys_service.run_shell_commando(['a2enmod',missing_module])
+            if exitcode!=0:
+                msg='Enable apache module failed.\nstdout={}\nstderr={}'.format(stdout,stderr)
+                print(msg)
+                raise Exception(msg)
+        # everything is fine :)
+        print('\tsuccessfully enabled {} needed apache modules.'.format(len(missing)))

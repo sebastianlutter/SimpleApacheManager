@@ -104,6 +104,9 @@ class SystemCommand(IAction):
         try:
             # copy default vhost
             services['template'].copyDefaultVhost(services['system'],config['system']['folder_sam_source_dir'])
+            # generate wildcard cert
+            cert_default_path=os.path.join(services['template'].folder_vhost,'default','certs')
+            services['apache'].generateSSLCertsSelfSigned(cert_default_path,'server',services['system'],config)
         except:
             print("Copy default template failed with exception. Continue anyway.")
         print("Generate default config in /etc/apache2/sites-available/SimpleApacheManager.conf")
@@ -115,5 +118,7 @@ class SystemCommand(IAction):
         # We use the www-data user as default user in /var/www/vhosts, and its uid=33.
         # So we relax this settings in the apache security config
         services['apache'].relaxLimitUIDRangeMpmItk()
+        # now enable any mising apache modes
+        services['apache'].enableNeededModules(services['system'])
         # now reload the apache configuration
         services['apache'].reloadApache(services['system'])
