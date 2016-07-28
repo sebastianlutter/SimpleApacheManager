@@ -41,7 +41,7 @@ class SystemCommand(IAction):
     def getExampleUsage(self):
         out=list()
         for action in self.actions.keys():
-            out.append(' $ {:<45s} : {}'.format('sam '+action,self.actions[action]))
+            out.append(' $ {:<45s} : {}'.format('samcli '+action,self.actions[action]))
         return out
 
     '''

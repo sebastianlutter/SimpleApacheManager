@@ -23,10 +23,10 @@ class UserCommand(IAction):
     actions=collections.OrderedDict(sorted({
                                                "list" : [[]
                                                    ,"list all available domains, subdomains and alias"
-                                                   ,"sam user list"]
+                                                   ,"samcli user list"]
                                                ,"add" : [["user"]
-            ,"add a new vhost to the server"
-            ,"sam user add mary"]
+                                                    ,"add a new vhost to the server"
+                                                    ,"samcli user add mary"]
                                            }.items()))
 
     argHelp={"user":"A username without whitespaces or special chars."}

@@ -23,25 +23,25 @@ class DomainCommand(IAction):
     actions=collections.OrderedDict(sorted({
        "list" : [[]
            ,"list all available domains, subdomains and alias"
-           ,"sam domain list"]
+           ,"samcli domain list"]
         ,"add" : [["domain"]
             ,"add a new vhost to the server"
-            ,"sam domain add example.org"]
+            ,"samcli domain add example.org"]
         ,"del" : [["domain"]
             ,"delete an existing vhost from the server"
-            ,"sam domain del example.org"]
+            ,"samcli domain del example.org"]
         ,"addsub" : [["domain","subdomain"]
             ,"add a new subdomain to an existing domain"
-            ,"sam domain addsub example.org dl"]
+            ,"samcli domain addsub example.org dl"]
         ,"delsub" : [["domain","subdomain"]
             ,"del a existing subdomain from an existing domain"
-            ,"sam domain delsub example.org dl"]
+            ,"samcli domain delsub example.org dl"]
         ,"addalias" : [["domain","alias"]
             ,"add an alias domain to a existing domain"
-            ,"sam domain addalias example.org www.foo.de"]
+            ,"samcli domain addalias example.org www.foo.de"]
         ,"delalias" : [["domain","alias"]
             ,"delete an alias name from an existing domain"
-            ,"sam domain delalias example.org www.foo.de"]
+            ,"samcli domain delalias example.org www.foo.de"]
     }.items()))
 
     argHelp={"domain":"The domain name, i.e. example.org"
