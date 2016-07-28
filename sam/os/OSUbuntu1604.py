@@ -35,11 +35,18 @@ class OSUbuntu1604(IOperationSystem):
     def name(self):
         return "OSUbuntu1604"
 
+    """
+    Identifies which required packages are not installed, and install them. Check if we have sudo permissions.
+    """
     def install(self,config):
+        missing=self.get_missing_packages()
         # First off all, install the needed software packages in the OS
         cache = apt.cache.Cache()
-        cache.update()
-        missing=self.get_missing_packages()
+        try:
+            cache.update()
+        except:
+            print("WARNING: Update apt cache failed, continue with old package cache")
+        # mark missing packages to install
         for package in missing:
             pkg = cache[package]
             #print("Package "+package+" installed="+str(pkg.is_installed) )
