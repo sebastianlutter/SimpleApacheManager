@@ -37,7 +37,6 @@ setup(name='SimpleApacheManager',
           'configparser',
           'pip',
           'argparse',
-          'pyOpenSSL'
       ],
 #      entry_points = {
 #        "console_scripts": ['samcli = sam.SimpleApacheManager:main']
