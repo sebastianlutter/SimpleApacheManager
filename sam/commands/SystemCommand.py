@@ -75,10 +75,11 @@ class SystemCommand(IAction):
         else:
             print("Given default domain user "+sys_user+" exists in the OS.")
         # make sure group exists, add it if not
-        if not services['user'].checkIfGroupExistsInOS(sys_group):
+        admin_group=config['system']['admin_group']
+        if not services['user'].checkIfGroupExistsInOS(admin_group):
             # add group to OS
-            print("\tadmin group "+sys_group+" does not exist, try to create it.")
-            services['user'].createOSGroup(sys_group,services['system'])
+            print("\tadmin group "+admin_group+" does not exist, try to create it.")
+            services['user'].createOSGroup(admin_group,services['system'])
         # create samcli link to sam_wrapper.py
         sam_wrapper_file=os.path.join(config['system']['folder_sam_source_dir'],config['system']['file_wrapper_script'])
         services['system'].createSymlink(sam_wrapper_file,config['system']['file_samcli_link'])
