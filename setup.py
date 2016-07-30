@@ -38,15 +38,4 @@ setup(name='SimpleApacheManager',
           'pip',
           'argparse',
       ],
-#      entry_points = {
-#        "console_scripts": ['samcli = sam.SimpleApacheManager:main']
-#      },
-#      package_dir = {'': 'sam'}
-#      scripts=['scripts/install.sh']
-#      package_data={
-#          # If any package contains *.txt or *.rst files, include them:
-#          '': ['*.txt', '*.rst'],
-#          # And include any *.msg files found in the 'hello' package, too:
-#          'hello': ['*.msg'],
-#      }
 )
