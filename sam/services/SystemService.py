@@ -3,6 +3,7 @@
 import pwd
 import grp
 import shutil
+import socket
 import time
 import re
 
@@ -202,3 +203,21 @@ class SystemService(IService):
         print("\tadding sudoers entry in file /etc/sudoers")
         with open('/etc/sudoers', 'a') as file:
             file.write(sudoers_line+'\n')
+
+    """
+    Get IP for domain from nameserver, check if this is equal to the
+    IP from config.ini
+    """
+    def checkDomainIP(self, domain, our_ip):
+        # resolve domain
+        dns_ip=str(socket.gethostbyname(domain))
+        if our_ip == dns_ip:
+            print("\nThe domains IP " + domain + " is properly configured to " + dns_ip + ". Everything is fine.")
+            return True
+        else:
+            if re.match("^[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}$", dns_ip):
+                print(
+                    "\nWarning: IP of domain " + domain + " is " + dns_ip + ". The servers IP is " + our_ip + ". Please configure your domain to point to " +our_ip + ".\n")
+            else:
+                print("\nWarning: IP of domain " + domain + " was not found. DNS says it does not exist.\n")
+            return False

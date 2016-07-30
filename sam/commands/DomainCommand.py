@@ -112,9 +112,10 @@ class DomainCommand(IAction):
 
     def process(self, services, config, args, real_user):
         # set the real user executed this script as class attribut
-        self.real_user=real_user if real_user != 'root' else config['domain']['default_user']
+        self.real_user=real_user if not (real_user == 'root') else config['domain']['default_user']
         # is this a user or admin request
-        self.is_user=(not self.real_user == config['system']['admin_user'])
+        self.is_user=not ( self.real_user == config['system']['admin_user']
+                        or self.real_user == config['domain']['default_user'])
         # call the right action
         if args.sub_command=="add":
             self.validateParam("domain",args.domain)
@@ -180,6 +181,8 @@ class DomainCommand(IAction):
             services['apache'].deleteIncludeFromGlobalConf(vhost_config_file,services['template'])
             print("Try to restart apache server after last added include has been removed from apache configuration..")
             services['apache'].reloadApache(services['system'],True)
+        # check if domain is properly configured
+        services['system'].checkDomainIP(domain,config['system']['ip'])
 
 
 
