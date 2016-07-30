@@ -113,10 +113,12 @@ class DomainCommand(IAction):
     def process(self, services, config, args, real_user):
         # set the real user executed this script as class attribut
         self.real_user=real_user if real_user != 'root' else config['domain']['default_user']
+        # is this a user or admin request
+        self.is_user=(not self.real_user == config['system']['admin_user'])
         # call the right action
         if args.sub_command=="add":
             self.validateParam("domain",args.domain)
-            self.commandAdd(args.domain,services,config,self.real_user)
+            self.commandAdd(args.domain,services,config,self.real_user,self.is_user)
         elif args.sub_command=="del":
             self.validateParam("domain", args.domain)
             self.commandDel(args.domain)
@@ -141,11 +143,16 @@ class DomainCommand(IAction):
         else:
             raise Exception("Unknown sub_command "+args.sub_command)
 
+    """
+    List all domains, subdomains and alias
+    """
     def commandList(self,services):
         print("DomainActions triggered: list")
         services['apache'].getExistingVHostsList(services['template'],services['system'])
-
-    def commandAdd(self,domain,services,config,real_user):
+    """
+    Add a new domain to the system
+    """
+    def commandAdd(self,domain,services,config,real_user,is_user):
         # construct dest path
         dest_folder=os.path.join(services['apache'].getVHostFolderFor(real_user,services['template'],config),domain)
         # Abort if it already exists
@@ -154,7 +161,7 @@ class DomainCommand(IAction):
             sys.exit(1)
         print("Create vhost for {} in folder {}".format(domain,dest_folder))
         # copy and fill template
-        services['template'].generateVHostTemplate(domain,config,services['system'],real_user,dest_folder)
+        services['template'].generateVHostTemplate(domain,config,services['system'],real_user,dest_folder,is_user)
         # generate the SSL certs for this domain
         ssl_cert_folder=os.path.join(dest_folder,'certs')
         services['apache'].generateSSLCertsSelfSigned(ssl_cert_folder,domain,services['system'],config)

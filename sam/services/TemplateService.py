@@ -98,7 +98,7 @@ class TemplateService(IService):
     The new vhost is not registered in the global config afterwards. Just the skeleton is
     copied and values filled in.
     """
-    def generateVHostTemplate(self,domain,config,sys_service,user,vhost_dir):
+    def generateVHostTemplate(self,domain,config,sys_service,user,vhost_dir,is_user):
         # first of all copy vhost template to dest dir
         #vhost_dir = os.path.join(self.folder_tpl_vhost, domain)
         tpl_dir = os.path.join(config['system']['folder_sam_source_dir'],self.folder_tpl_vhost)
@@ -110,6 +110,10 @@ class TemplateService(IService):
             raise Exception("Destination folder "+tpl_dir+" does already exist. Abort.")
         # copy the filetree from tpl to its destination
         sys_service.copyFolderRecursive(tpl_dir,vhost_dir)
+        # if this is a user vhost, then make the symlink now
+        # if this is a user request create the vhost link now
+        if is_user:
+            sys_service.createSymlink(vhost_dir,os.path.join(config['system']['folder_vhosts'],domain))
         # path of the new vhost configuration
         vhost_conf_path = os.path.join(vhost_dir, "conf/httpd.include")
         # build mapping
@@ -134,7 +138,7 @@ class TemplateService(IService):
     def copyDefaultVhost(self,sys_service,sam_src_folder):
         # tpl path
         tpl_dir=os.path.join(sam_src_folder,self.folder_tpl_vhost_default)
-        # destination /var/wwW/vhosts/default
+        # destination /var/www/vhosts/default
         dest_dir=os.path.join(self.folder_vhost,'default')
         if os.path.exists(dest_dir):
             print('\tskip copy of default vhost {}, it already exists.'.format(dest_dir))
