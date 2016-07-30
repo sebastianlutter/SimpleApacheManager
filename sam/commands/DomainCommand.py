@@ -110,9 +110,9 @@ class DomainCommand(IAction):
     Process an action depending on the given args
     '''
 
-    def process(self, services, config, args, real_user):
+    def process(self, services, config, args, user):
         # set the real user executed this script as class attribut
-        self.real_user=real_user if not (real_user == 'root') else config['domain']['default_user']
+        self.real_user=user if not (user == 'root') else config['domain']['default_user']
         # is this a user or admin request
         self.is_user=not ( self.real_user == config['system']['admin_user']
                         or self.real_user == config['domain']['default_user'])
@@ -122,7 +122,7 @@ class DomainCommand(IAction):
             self.commandAdd(args.domain,services,config,self.real_user,self.is_user)
         elif args.sub_command=="del":
             self.validateParam("domain", args.domain)
-            self.commandDel(args.domain)
+            self.commandDel(args.domain,services,config,self.real_user,self.is_user)
         elif args.sub_command == "addsub":
             self.validateParam("domain", args.domain)
             self.validateParam("subdomain", args.subdomain)
@@ -185,10 +185,33 @@ class DomainCommand(IAction):
         services['system'].checkDomainIP(domain,config['system']['ip'])
 
 
-
-    def commandDel(self,domain):
+    """
+    Delete an existing domain and all of its subdomains
+    """
+    def commandDel(self,domain,services,config,real_user,is_user):
+        path_to_del=os.path.join(services['apache'].getVHostFolderFor(real_user,services['template'],config),domain)
+        if not os.path.isdir(path_to_del):
+            print("Domain path "+path_to_del+" is not a folder. Abort.")
+            sys.exit(1)
+        self.askUser("Delete domain " + domain + " with all its subdomains? ")
         print("Delete existing vhost " + domain)
-        #TODO: implement
+        try:
+            services['system'].createFolderBackup(path_to_del,domain+'_'+real_user,config['system']['folder_vhosts_backup'])
+        except:
+            print("Backup folder "+path_to_del+" failed. Abort to delete the vhost.")
+            sys.exit(1)
+        # delete the folder itself
+        services['system'].deleteFolderRecursive(path_to_del)
+        if is_user:
+            # also delete the link in /var/www/vhosts
+            link_path=os.path.join(config['system']['folder_vhosts'],domain)
+            services['system'].unlinkSymlink(link_path)
+        # remove the include lines for the config in global configuration
+        include_path=os.path.join(path_to_del,'conf/httpd.include')
+        services['apache'].deleteIncludeFromGlobalConf(include_path , services['template'])
+        # reload the apache service
+        services['apache'].reloadApache(services['system'])
+
 
     def commandAddSub(self, domain,subdomain):
         print("Create subdomain {}.{} for existing domain {}".format(subdomain,domain,domain))

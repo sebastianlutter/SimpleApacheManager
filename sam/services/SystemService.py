@@ -134,6 +134,7 @@ class SystemService(IService):
         if not os.path.isdir(path):
             print("\tERROR:" + path + " is not a directory. Abort.")
             return False
+        print("\tdelete folder recursive: "+path)
         # delete folder ignore errors
         shutil.rmtree(path, True, onerror=None)
         # check if dir has been deleted
@@ -154,8 +155,9 @@ class SystemService(IService):
         # Create archive name with timestamp
         timestamp = time.strftime("%Y_%m_%d_%H_%M_%S__", time.localtime())
         domain = os.path.basename(abspath)
-        backupfile = os.path.join("", timestamp + filename + ".tar.bz2")
+        backupfile = os.path.join(archiveFolder, timestamp + filename + ".tar.bz2")
         print("\tcreated backup of " + path + ": " + backupfile)
+        print("\tbackup is stored in folder "+archiveFolder)
         exitcode,stdout,stderr = self.run_shell_commando(["tar", "cfj", backupfile, path])
         if exitcode != 0:
             print("Error while doing backup:\n{}\n{}".format(stdout,stderr))
@@ -210,7 +212,11 @@ class SystemService(IService):
     """
     def checkDomainIP(self, domain, our_ip):
         # resolve domain
-        dns_ip=str(socket.gethostbyname(domain))
+        try:
+            dns_ip=str(socket.gethostbyname(domain))
+        except:
+            print("\nWarning: IP of domain " + domain + " was not found. DNS says it does not exist.\n")
+            return False
         if our_ip == dns_ip:
             print("\nThe domains IP " + domain + " is properly configured to " + dns_ip + ". Everything is fine.")
             return True

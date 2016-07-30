@@ -170,7 +170,7 @@ class ApacheService(IService):
         with open(configFile, "r") as f:
             apacheConfString = f.read()
         # remove the include from the string
-        apacheConfString = apacheConfString.replace("Include " + configFile + "\n", "");
+        apacheConfString = apacheConfString.replace("Include " + includePath + "\n", "");
         with open(configFile, "w") as f:
             f.write(apacheConfString)
 

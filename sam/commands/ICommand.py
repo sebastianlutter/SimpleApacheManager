@@ -9,6 +9,9 @@ from this class should not implement direct operations.
 
 from abc import ABC, abstractmethod
 
+import sys
+
+
 class IAction(ABC):
 
     def __init__(self):
@@ -29,3 +32,9 @@ class IAction(ABC):
     @abstractmethod
     def process(self, services, config, args):
         pass
+
+    def askUser(self,message):
+        answer = input(message+": (yes/no)")
+        if not answer == "yes":
+            print("Aborted.")
+            sys.exit(1)
