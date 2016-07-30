@@ -231,3 +231,49 @@ class ApacheService(IService):
                 raise Exception(msg)
         # everything is fine :)
         print('\tsuccessfully enabled {} needed apache modules.'.format(len(missing)))
+
+    """
+    Print overview of all domains, subdomains and alias to console.
+    """
+    def getExistingVHostsList(self,tpl_service,sys_service):
+        print("List available domains\n")
+        # get list of folders in /var/www/vhosts
+        fileList = sys_service.getFolderList(tpl_service.folder_vhost)
+        if len(fileList) < 1:
+            print("\t -- no domains configured yet")
+            return True
+        for i in fileList:
+            domain = os.path.basename(i)
+            if domain == "default" or domain == "backup":
+                continue
+            print("Domain\t" + domain)
+            # Existiert eine Konfiguration?
+            if os.path.exists(os.path.join(i, "conf/httpd.include")):
+                # Testen ob AliasNames vorhanden
+                files = open(os.path.join(i, "conf/httpd.include"), 'r')
+                filelist = files.readlines()
+                files.close()
+                # search for alias domain entries
+                aliasDict = dict()
+                for i in filelist:
+                    if re.match(".*ServerAlias.*", i):
+                        key = i.replace("\n", "").replace("\t", "").replace("ServerAlias", "").replace(" ", "")
+                        if (not (key in aliasDict)):
+                            aliasDict[key] = "Done"
+                            print("\tALIAS\t" + key)
+            # Search for subdomains
+            sub_path=os.path.join(tpl_service.folder_vhost, domain, "subdomains")
+            if not os.path.isdir(sub_path):
+                continue
+            # get list of subfolders in subdomain
+            subdomainList =sys_service.getFolderList()
+            # are subdomains available
+            if (len(subdomainList) > 0):
+                # if so, list them
+                for j in subdomainList:
+                    subdomain = os.path.basename(j)
+                    # don't show hidden files
+                    if re.match("^\w.*$", subdomain):
+                        print("\tSUBDOMAIN\t" + subdomain + "." + domain)
+                        pass
+        return True

@@ -22,7 +22,6 @@ from sam.os.OSUbuntu1604 import OSUbuntu1604
 from sam.commands.DomainCommand import DomainCommand
 from sam.commands.SystemCommand import SystemCommand
 from sam.commands.UserCommand import UserCommand
-from pprint import pprint
 
 # a global verbose flag
 verbose=False
@@ -208,6 +207,8 @@ class SimpleApacheManager():
             print("OS package install failed.\n\n Please manually install these packages:")
             print("apt-get install "+' '.join(self.__os_service__.required_packages))
             print()
+            print("Sometimes python apt failes to install packages for unknown reason, if this is your first run then try again.")
+            sys.exit(1)
         # Delegate SimpleApacheManger installation to SystemCommand class
         self.commands['system'].process(self.services,self.config,self.args,self.real_user)
 

@@ -37,5 +37,5 @@ setup(name='SimpleApacheManager',
           'configparser',
           'pip',
           'argparse',
-      ],
+      ]
 )

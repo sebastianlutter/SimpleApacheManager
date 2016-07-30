@@ -137,16 +137,13 @@ class DomainCommand(IAction):
             self.validateParam("alias", args.alias)
             self.commandDelAlias(args.domain, args.alias)
         elif args.sub_command == "list":
-            pass
+            self.commandList(services)
         else:
             raise Exception("Unknown sub_command "+args.sub_command)
 
-
-
-
-    def commandList(self,domain):
+    def commandList(self,services):
         print("DomainActions triggered: list")
-        #TODO: implement
+        services['apache'].getExistingVHostsList(services['template'],services['system'])
 
     def commandAdd(self,domain,services,config,real_user):
         # construct dest path
