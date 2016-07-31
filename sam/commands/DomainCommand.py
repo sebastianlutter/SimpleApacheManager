@@ -134,11 +134,11 @@ class DomainCommand(IAction):
         elif args.sub_command == "addalias":
             self.validateParam("domain", args.domain)
             self.validateParam("alias", args.alias)
-            self.commandAddAlias(args.domain, args.alias)
+            self.commandAddAlias(args.domain, args.alias,services,config,self.real_user,self.is_user)
         elif args.sub_command=="delalias":
             self.validateParam("domain", args.domain)
             self.validateParam("alias", args.alias)
-            self.commandDelAlias(args.domain, args.alias)
+            self.commandDelAlias(args.domain, args.alias,services,config,self.real_user)
         elif args.sub_command == "list":
             self.commandList(services)
         else:
@@ -150,6 +150,7 @@ class DomainCommand(IAction):
     def commandList(self,services):
         print("DomainActions triggered: list")
         services['apache'].printExistingVHostsList(services['template'], services['system'])
+
     """
     Add a new domain to the system
     """
@@ -188,6 +189,9 @@ class DomainCommand(IAction):
             services['system'].checkDomainIP(domain,config['system']['ip'])
         else:
             print("\nAn error occured while creating the doman. \nInclude of domain in file {} removed to be able to start apache again.".format(vhost_config_file,services['template'].file_etc_apache_conf_global))
+            print('\nThe domain config has not been included in the domain.')
+            print('Hopefully the apache server is now up again. Please fix your errors manually and redo the step.')
+
 
     """
     Delete an existing domain and all of its subdomains
@@ -243,6 +247,7 @@ class DomainCommand(IAction):
         subdomain_config_file = os.path.join(subdomain_folder,'conf/httpd.include')
         services['apache'].addIncludeToConf(subdomain_config_file,vhost_config_file,services['template'].var_subdomain_tpl )
         # check apache service and reload
+        changes_revoked=False
         try:
             services['apache'].reloadApache(services['system'])
         except:
@@ -251,8 +256,16 @@ class DomainCommand(IAction):
             services['apache'].deleteIncludeFromGlobalConf(vhost_config_file, services['template'])
             print("Try to restart apache server after last added include has been removed from apache configuration..")
             services['apache'].reloadApache(services['system'], True)
-        # check if domain is properly configured
-        services['system'].checkDomainIP(subdomain+'.'+domain, config['system']['ip'])
+            print('\nBecause of an error while creating subdomain {} the domain config has not been included in domain {}')
+            print('Hopefully the apache server is now up again. Please fix your errors manually and redo the step.')
+            changes_revoked=True
+        if not changes_revoked:
+            # check if domain is properly configured
+            services['system'].checkDomainIP(subdomain + '.' + domain, config['system']['ip'])
+        else:
+            print("\nAn error occured while creating the doman. \nInclude of domain in file {} removed to be able to start apache again.".format(vhost_config_file,services['template'].file_etc_apache_conf_global))
+            print('\nThe domain config has not been included in the domain.')
+            print('Hopefully the apache server is now up again. Please fix your errors manually and redo the step.')
 
 
     def commandDelSub(self, domain, subdomain,services,config,real_user):
@@ -278,11 +291,11 @@ class DomainCommand(IAction):
         services['apache'].reloadApache(services['system'])
 
 
-    def commandAddAlias(self, domain, alias):
+    def commandAddAlias(self, domain, alias,services,config,real_users,is_user):
         print("Add alias {} to existing domain {}".format(alias, domain))
         #TODO: implement
 
-    def commandDelAlias(self, domain, alias):
+    def commandDelAlias(self, domain, alias,services,config,real_user):
         print("Delete alias {} from existing domain {}".format(alias, domain))
         #TODO: implement
 
