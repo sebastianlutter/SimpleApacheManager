@@ -130,7 +130,7 @@ class DomainCommand(IAction):
         elif args.sub_command == "delsub":
             self.validateParam("domain", args.domain)
             self.validateParam("subdomain", args.domain)
-            self.commandDelSub(args.domain, args.subdomain)
+            self.commandDelSub(args.domain, args.subdomain,services,config,self.real_user)
         elif args.sub_command == "addalias":
             self.validateParam("domain", args.domain)
             self.validateParam("alias", args.alias)
@@ -254,9 +254,29 @@ class DomainCommand(IAction):
         # check if domain is properly configured
         services['system'].checkDomainIP(subdomain+'.'+domain, config['system']['ip'])
 
-    def commandDelSub(self, domain, subdomain):
+
+    def commandDelSub(self, domain, subdomain,services,config,real_user):
+        vhost_path=os.path.join(services['apache'].getVHostFolderFor(real_user,services['template'],config),domain)
+        path_to_del=os.path.join(vhost_path,'subdomains',subdomain)
+        if not os.path.isdir(path_to_del):
+            print("Subdomain path "+path_to_del+" is not a folder. Abort.")
+            sys.exit(1)
+        self.askUser("Delete subdomain " + subdomain + '.' + domain + " ? ")
         print("Delete subdomain {}.{} from existing domain {}".format(subdomain, domain, domain))
-        #TODO: implement
+        try:
+            services['system'].createFolderBackup(path_to_del,subdomain+'.'+domain+'_'+real_user,config['system']['folder_vhosts_backup'])
+        except:
+            print("Backup folder "+path_to_del+" failed. Abort to delete the subdomain.")
+            sys.exit(1)
+        # delete the folder itself
+        services['system'].deleteFolderRecursive(path_to_del)
+        # remove the include lines for the config in global configuration
+        include_path=os.path.join(path_to_del,'conf/httpd.include')
+        vhost_conf_path=os.path.join(vhost_path,'conf/httpd.include')
+        services['apache'].deleteIncludeFromConf(include_path , vhost_conf_path)
+        # reload the apache service
+        services['apache'].reloadApache(services['system'])
+
 
     def commandAddAlias(self, domain, alias):
         print("Add alias {} to existing domain {}".format(alias, domain))

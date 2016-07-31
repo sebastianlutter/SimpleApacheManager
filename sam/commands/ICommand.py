@@ -34,7 +34,7 @@ class IAction(ABC):
         pass
 
     def askUser(self,message):
-        answer = input(message+": (yes/no)")
+        answer = input(message+": (yes/no) ")
         if not answer == "yes":
             print("Aborted.")
             sys.exit(1)
