@@ -234,7 +234,7 @@ class ApacheService(IService):
             if not os.path.isdir(sub_path):
                 continue
             # get list of subfolders in subdomain
-            subdomainList =sys_service.getFolderList()
+            subdomainList =sys_service.getFolderList(sub_path)
             # are subdomains available
             if (len(subdomainList) > 0):
                 # if so, list them
