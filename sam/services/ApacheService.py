@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+import pprint
 import re
 import string
 import sys
@@ -14,7 +15,7 @@ class ApacheService(IService):
 
     script_ssl_cert_creation='scripts/generateSSLcerts.sh'
 
-    needed_modules=['ssl']
+    needed_modules=['ssl','proxy_html','rewrite']
 
     def __init__(self):
         pass
@@ -177,7 +178,8 @@ class ApacheService(IService):
         for line in stdout.split('\n'):
             # format of a line: module_name (type)
             # only add module_name
-            modules_enabled_list.append(line.split(' ')[0])
+            entry=line.strip().split(' ')[0].split('_')[0]
+            modules_enabled_list.append(entry)
         # now check each needed module against the enabled list
         for needed_module in self.needed_modules:
             if not needed_module in modules_enabled_list:
