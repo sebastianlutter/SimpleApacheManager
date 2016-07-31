@@ -126,7 +126,7 @@ class DomainCommand(IAction):
         elif args.sub_command == "addsub":
             self.validateParam("domain", args.domain)
             self.validateParam("subdomain", args.subdomain)
-            self.commandAddSub(args.domain,args.subdomain)
+            self.commandAddSub(args.domain,args.subdomain,services,config,self.real_user,self.is_user)
         elif args.sub_command == "delsub":
             self.validateParam("domain", args.domain)
             self.validateParam("subdomain", args.domain)
@@ -149,7 +149,7 @@ class DomainCommand(IAction):
     """
     def commandList(self,services):
         print("DomainActions triggered: list")
-        services['apache'].getExistingVHostsList(services['template'],services['system'])
+        services['apache'].printExistingVHostsList(services['template'], services['system'])
     """
     Add a new domain to the system
     """
@@ -171,19 +171,23 @@ class DomainCommand(IAction):
         services['system'].chownRecursive(dest_folder,user,group)
         # add entry in /etc/apache2/sites-enabled/000-default.conf
         vhost_config_file=os.path.join(dest_folder,'conf/httpd.include')
-        services['apache'].addIncludeToGlobalConf(vhost_config_file,services['template'])
+        services['apache'].addIncludeToConf(vhost_config_file,services['template'].file_etc_apache_conf_global,services['template'].var_etc_apache_include)
         # check apache service and reload
+        changes_revoked=False
         try:
             services['apache'].reloadApache(services['system'])
         except:
             # apache failed to reload, remove include again and restart
             print("ERROR: Apache was not able to reload the config. Remove include entry and try again")
-            services['apache'].deleteIncludeFromGlobalConf(vhost_config_file,services['template'])
+            services['apache'].deleteIncludeFromConf(vhost_config_file,services['template'].file_etc_apache_conf_global)
             print("Try to restart apache server after last added include has been removed from apache configuration..")
             services['apache'].reloadApache(services['system'],True)
-        # check if domain is properly configured
-        services['system'].checkDomainIP(domain,config['system']['ip'])
-
+            changes_revoked=True
+        if not changes_revoked:
+            # check if domain is properly configured
+            services['system'].checkDomainIP(domain,config['system']['ip'])
+        else:
+            print("\nAn error occured while creating the doman. \nInclude of domain in file {} removed to be able to start apache again.".format(vhost_config_file,services['template'].file_etc_apache_conf_global))
 
     """
     Delete an existing domain and all of its subdomains
@@ -208,14 +212,47 @@ class DomainCommand(IAction):
             services['system'].unlinkSymlink(link_path)
         # remove the include lines for the config in global configuration
         include_path=os.path.join(path_to_del,'conf/httpd.include')
-        services['apache'].deleteIncludeFromGlobalConf(include_path , services['template'])
+        services['apache'].deleteIncludeFromConf(include_path , services['template'].file_etc_apache_conf_global)
         # reload the apache service
         services['apache'].reloadApache(services['system'])
 
 
-    def commandAddSub(self, domain,subdomain):
+    def commandAddSub(self, domain,subdomain,services,config,real_user,is_user):
+        # construct dest path
+        domain_folder=os.path.join(services['apache'].getVHostFolderFor(real_user,services['template'],config),domain)
+        subdomain_folder=os.path.join(domain_folder,'subdomains',subdomain)
+        # Abort if it already exists
+        if os.path.isdir(subdomain_folder):
+            print("The subdomain folder {} already exists. Abort.".format(subdomain_folder))
+            sys.exit(1)
+        if not os.path.isdir(domain_folder):
+            print("The domain folder {} does not exists. Cannot create subdomain in it. Abort.".format(domain_folder))
+            sys.exit(1)
         print("Create subdomain {}.{} for existing domain {}".format(subdomain,domain,domain))
-        #TODO: implement
+        #copy subdomain template
+        tpl_path=os.path.join(config['system']['folder_sam_source_dir'],services['template'].folder_tpl_subdomain)
+        services['template'].generateSubdomainTemplate(domain,subdomain,config,services['system'],real_user,subdomain_folder)
+        # generate the SSL certs for this domain
+        ssl_cert_folder = os.path.join(subdomain_folder, 'certs')
+        services['apache'].generateSSLCertsSelfSigned(ssl_cert_folder, subdomain+'.'+domain, services['system'], config)
+        # now chown the whole folder tree to the given ownership
+        user, group = services['apache'].getOwnershipFor(real_user, config)
+        services['system'].chownRecursive(subdomain_folder, user, group)
+        # add entry in /etc/apache2/sites-enabled/000-default.conf
+        vhost_config_file = os.path.join(domain_folder, 'conf/httpd.include')
+        subdomain_config_file = os.path.join(subdomain_folder,'conf/httpd.include')
+        services['apache'].addIncludeToConf(subdomain_config_file,vhost_config_file,services['template'].var_subdomain_tpl )
+        # check apache service and reload
+        try:
+            services['apache'].reloadApache(services['system'])
+        except:
+            # apache failed to reload, remove include again and restart
+            print("ERROR: Apache was not able to reload the config. Remove include entry and try again")
+            services['apache'].deleteIncludeFromGlobalConf(vhost_config_file, services['template'])
+            print("Try to restart apache server after last added include has been removed from apache configuration..")
+            services['apache'].reloadApache(services['system'], True)
+        # check if domain is properly configured
+        services['system'].checkDomainIP(subdomain+'.'+domain, config['system']['ip'])
 
     def commandDelSub(self, domain, subdomain):
         print("Delete subdomain {}.{} from existing domain {}".format(subdomain, domain, domain))

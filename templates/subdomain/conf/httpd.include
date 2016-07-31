@@ -5,8 +5,8 @@
 
     ServerAdmin  $ADMINMAIL
     DocumentRoot /var/www/vhosts/$DOMAIN/subdomains/$SUBDOMAIN/httpdocs
-    CustomLog  /var/www/vhosts/$DOMAIN/logs/access_log combined
-    ErrorLog  /var/www/vhosts/$DOMAIN/logs/error_log
+    CustomLog  /var/www/vhosts/$DOMAIN/subdomains/$SUBDOMAIN/logs/access_log combined
+    ErrorLog  /var/www/vhosts/$DOMAIN/subdomains/$SUBDOMAIN/logs/error_log
 
 	<IfModule mpm_itk_module>
         AssignUserId $USER $GROUP
@@ -36,8 +36,8 @@
 
 	ServerAdmin  $ADMINMAIL
 	DocumentRoot /var/www/vhosts/$DOMAIN/subdomains/$SUBDOMAIN/httpdocs
-	CustomLog  /var/www/vhosts/$DOMAIN/logs/access_ssl_log combined
-	ErrorLog  /var/www/vhosts/$DOMAIN/logs/error_log
+	CustomLog  /var/www/vhosts/$DOMAIN/subdomains/$SUBDOMAIN/logs/access_log combined
+	ErrorLog  /var/www/vhosts/$DOMAIN/subdomains/$SUBDOMAIN/logs/error_log
 	
 	SSLEngine on
 	SSLVerifyClient none

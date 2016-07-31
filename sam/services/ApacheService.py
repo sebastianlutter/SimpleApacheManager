@@ -72,7 +72,7 @@ class ApacheService(IService):
         email=config['DEFAULT']['mail']
         out_path = os.path.join(out_folder, domain)
         print("\ncreate SSL certificate for " + domain + " in folder " + out_path)
-        # crete cert by calling script
+        # create cert by calling script
         script_path=os.path.join(config['system']['folder_sam_source_dir'],self.script_ssl_cert_creation)
         exitcode,stdout,stderr=sys_service.run_shell_commando([script_path, company, domain, email, out_path])
         if exitcode!=0:
@@ -81,34 +81,6 @@ class ApacheService(IService):
             raise Exception(msg)
         else:
             print(stdout)
-    """
-        # check if out_folder exists
-        if not os.path.isdir(out_folder):
-            raise Exception('Cannot create SSL certs in {}, folder does not exist.'.format(out_folder))
-        CERT_FILE = os.path.join(out_folder,domain,'.crt')
-        KEY_FILE = os.path.join(out_folder,domain,'.key')
-        # create a key pair
-        k = crypto.PKey()
-        k.generate_key(crypto.TYPE_RSA, 2048)
-        # create a self-signed cert
-        cert = crypto.X509()
-        cert.get_subject().C = "DE"
-        cert.get_subject().ST = "Berlin"
-        cert.get_subject().L = "Berlin"
-        cert.get_subject().O = domain
-        cert.get_subject().OU = domain+' owner'
-        cert.get_subject().CN = domain
-        cert.set_serial_number(1000)
-        cert.gmtime_adj_notBefore(0)
-        cert.gmtime_adj_notAfter(10*365*24*60*60)
-        cert.set_issuer(domain)
-        cert.set_pubkey(k)
-        cert.sign(k, 'sha1')
-        with open(CERT_FILE, "wt") as cert:
-            cert.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
-        with open(KEY_FILE, "wt") as key:
-            key.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
-"""
 
 
     """
@@ -116,7 +88,6 @@ class ApacheService(IService):
     is /var/www/vhosts, else it is /home/USER/web_domains
     """
     def getVHostFolderFor(self,user,tpl_service,config):
-
         # is this root or admin?
         if user == 'root' or user == config['system']['admin_user'] \
                 or user == config['domain']['default_user']:
@@ -143,35 +114,32 @@ class ApacheService(IService):
             return (user,config['system']['admin_group'])
 
 
+
     '''
-     Append an include line on the global apache config to include
-     a vhost config there
+     Append an include line to a apache config
      '''
-    def addIncludeToGlobalConf(self, includePath, tpl_service):
-        configFile=tpl_service.file_etc_apache_conf_global
-        key=tpl_service.var_etc_apache_include
-        print("\tappend include " + includePath + " to " + configFile)
+    def addIncludeToConf(self, includePath, config_path,key):
+        print("\tappend include " + includePath + " to " + config_path+" (key "+key+")")
         # load template file
-        with open(configFile, "r") as f:
+        with open(config_path, "r") as f:
             apacheConfString = f.read()
         # append include
         apacheConfString = apacheConfString.replace(key, "Include " + includePath + "\n" + key)
         # replace key in template with entry and key
-        with open(configFile, "w") as f:
+        with open(config_path, "w") as f:
             f.write(apacheConfString)
 
     """
     Deletes a include entry made by self.addIncludeToGlobalConf
     """
-    def deleteIncludeFromGlobalConf(self, includePath, tpl_service):
-        configFile = tpl_service.file_etc_apache_conf_global
-        print("\tremove include " + includePath + " from " + configFile)
+    def deleteIncludeFromConf(self, includePath, config_path):
+        print("\tremove include " + includePath + " from " + config_path)
         # Load content of file
-        with open(configFile, "r") as f:
+        with open(config_path, "r") as f:
             apacheConfString = f.read()
         # remove the include from the string
         apacheConfString = apacheConfString.replace("Include " + includePath + "\n", "");
-        with open(configFile, "w") as f:
+        with open(config_path, "w") as f:
             f.write(apacheConfString)
 
     """
@@ -235,7 +203,7 @@ class ApacheService(IService):
     """
     Print overview of all domains, subdomains and alias to console.
     """
-    def getExistingVHostsList(self,tpl_service,sys_service):
+    def printExistingVHostsList(self, tpl_service, sys_service):
         print("List available domains\n")
         # get list of folders in /var/www/vhosts
         fileList = sys_service.getFolderList(tpl_service.folder_vhost)
