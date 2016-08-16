@@ -119,7 +119,7 @@ class ApacheService(IService):
     '''
      Append an include line to a apache config
      '''
-    def addIncludeToConf(self, includePath, config_path,key):
+    def addIncludeToConf(self, includePath, config_path, key):
         print("\tappend include " + includePath + " to " + config_path+" (key "+key+")")
         # load template file
         with open(config_path, "r") as f:
@@ -131,7 +131,7 @@ class ApacheService(IService):
             f.write(apacheConfString)
 
     """
-    Deletes a include entry made by self.addIncludeToGlobalConf
+    Deletes a include entry made by self.addIncludeToConf
     """
     def deleteIncludeFromConf(self, includePath, config_path):
         print("\tremove include " + includePath + " from " + config_path)
@@ -140,6 +140,40 @@ class ApacheService(IService):
             apacheConfString = f.read()
         # remove the include from the string
         apacheConfString = apacheConfString.replace("Include " + includePath + "\n", "");
+        with open(config_path, "w") as f:
+            f.write(apacheConfString)
+
+    def addAliasToConf(self, alias, config_path, key):
+        entry = "ServerAlias " + alias
+        print("\tappend entry " + entry + " to " + config_path + " (key " + key + ")")
+        with open(config_path, "r") as f:
+            apacheConfString = f.read()
+            # check if Alias is already in the file
+        if entry in apacheConfString:
+            msg="alias {} already exists in file {}.\nAbort.".format(alias, config_path)
+            print("\t"+msg)
+            raise Exception(msg)
+            # replace variable in conf with entry and variable
+        apacheConfString = apacheConfString.replace(key, entry + "\n" + key)
+        with open(config_path, "w") as f:
+            f.write(apacheConfString)
+
+    """
+    Deletes a alias entry made by self.addAliasToConf
+    """
+    def deleteAliasFromConf(self, alias, config_path):
+        entry = "ServerAlias " + alias
+        print("\tremove alias " + alias + " from " + config_path)
+        # Load content of file
+        with open(config_path, "r") as f:
+            apacheConfString = f.read()
+        # check if alias does exist
+        if not (entry in apacheConfString):
+            msg="alias {} does not exists in file {}, cannot remove it.\nAbort.".format(alias, config_path)
+            print("\t"+msg)
+            raise Exception(msg)
+        # remove the include from the string
+        apacheConfString = apacheConfString.replace(entry + "\n\t", "");
         with open(config_path, "w") as f:
             f.write(apacheConfString)
 

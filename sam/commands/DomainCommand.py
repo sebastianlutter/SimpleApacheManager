@@ -298,10 +298,34 @@ class DomainCommand(IAction):
             print("Domain {} does not exist (directory {}). Abort. ".format(domain,vhost_path))
             sys.exit(1)
         print("Add alias {} to existing domain {}".format(alias, domain))
-        #TODO: implement
+        file = os.path.join(vhost_path, "conf/httpd.include")
+        key = services['template'].var_alias
+        # add the alias to the config file
+        try:
+            services['apache'].addAliasToConf(alias,file,key)
+        except (Exception) as e:
+            print(str(e))
+            print("Abort execution.")
+            sys.exit(1)
+        # reload the apache service
+        services['apache'].reloadApache(services['system'])
+
+
+
 
     def commandDelAlias(self, domain, alias,services,config,real_user):
         print("Delete alias {} from existing domain {}".format(alias, domain))
-        #TODO: implement
+        vhost_path = os.path.join(services['apache'].getVHostFolderFor(real_user, services['template'], config), domain)
+        configfile = os.path.join(vhost_path, "conf/httpd.include")
+        file = os.path.join(vhost_path, "conf/httpd.include")
+        # delete the alias from the config file
+        try:
+            services['apache'].deleteAliasFromConf(alias, file)
+        except (Exception) as e:
+            print(str(e))
+            print("Abort execution.")
+            sys.exit(1)
+            # reload the apache service
+        services['apache'].reloadApache(services['system'])
 
 
