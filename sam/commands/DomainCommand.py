@@ -291,7 +291,12 @@ class DomainCommand(IAction):
         services['apache'].reloadApache(services['system'])
 
 
-    def commandAddAlias(self, domain, alias,services,config,real_users,is_user):
+    def commandAddAlias(self, domain, alias,services,config,real_user,is_user):
+        # check domain
+        vhost_path=os.path.join(services['apache'].getVHostFolderFor(real_user,services['template'],config),domain)
+        if not os.path.isdir(vhost_path):
+            print("Domain {} does not exist (directory {}). Abort. ".format(domain,vhost_path))
+            sys.exit(1)
         print("Add alias {} to existing domain {}".format(alias, domain))
         #TODO: implement
 
