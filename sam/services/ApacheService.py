@@ -20,8 +20,9 @@ class ApacheService(IService):
     def __init__(self):
         pass
 
-    def check(self,config):
-        print("TODO: implement ApacheService.check()")
+    def check(self,config,services):
+        errors=list()
+        return errors
 
     def info(self):
         return "Apache service module for reload and restart the webserver."
@@ -68,6 +69,28 @@ class ApacheService(IService):
     Generate self signed server certificates for the apache webserver
     """
     def generateSSLCertsSelfSigned(self,out_folder,domain,sys_service,config):
+        print("\tgenerate SSL certs for "+domain)
+        company=domain
+        email=config['DEFAULT']['mail']
+        out_path = os.path.join(out_folder, domain)
+        print("\ncreate SSL certificate for " + domain + " in folder " + out_path)
+        # create cert by calling script
+        script_path=os.path.join(config['system']['folder_sam_source_dir'],self.script_ssl_cert_creation)
+        exitcode,stdout,stderr=sys_service.run_shell_commando([script_path, company, domain, email, out_path])
+        if exitcode!=0:
+            msg='Error creating cert for domain {} using script {}.\nstdout={}\nstderr={}'.format(domain,stdout,stderr)
+            print(msg)
+            raise Exception(msg)
+        else:
+            print(stdout)
+
+
+    """
+    Generate letencrypt server certificates for the apache webserver
+    """
+    def generateSSLCertsLetsencrypt(self,out_folder,domain,sys_service,config):
+        # check ACME letsencrypt client and download if missing
+        sys_service.downloadLetsEncryptClient(config['system']['folder_sam_source_dir'])
         print("\tgenerate SSL certs for "+domain)
         company=domain
         email=config['DEFAULT']['mail']

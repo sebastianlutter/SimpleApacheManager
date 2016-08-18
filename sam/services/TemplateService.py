@@ -3,6 +3,8 @@
 import os
 import pprint
 
+import re
+
 from sam.services.IService import IService
 from string import Template
 
@@ -42,8 +44,54 @@ class TemplateService(IService):
     def __init__(self):
         pass
 
-    def check(self,user):
-        print("TODO: implement TemplateService.check()")
+    def check(self,config,services):
+        errors=list()
+        srcDir=config['system']['folder_sam_source_dir']
+        # go through all variables
+        patternFolder=re.compile("^folder_.*$")
+        patternFile=re.compile("^file_.*$")
+        for var in vars(self.__class__).items():
+            # get tuple of varname and value
+            varname,value = var
+            # what kind is it?
+            if patternFile.match(varname):
+                if "tpl" in varname:
+                    # Template file, check if it exists
+                    if not os.path.isfile(os.path.join(srcDir,value)):
+                        msg="variable {}: Path {} is not a file.".format(varname,os.path.join(srcDir,value))
+                        print("\t"+msg)
+                        errors.append(msg)
+                elif "link" in varname:
+                    # check if link exist, but do not produce error (just print warning)
+                    if not os.path.islink(value):
+                        msg="variable {}: Path {} is not a link.".format(varname,value)
+                        print("\t"+msg)
+                        errors.append(msg)
+                else:
+                    # global file_etc_ vars, check if they exist
+                    if not os.path.isfile(value):
+                        msg = "variable {}: Path {} is not a file.".format(varname, value)
+                        print("\t"+msg)
+                        errors.append(msg)
+            elif patternFolder.match(varname):
+                # check folder vars
+                if "tpl" in varname:
+                    # Template folder, check if it exists
+                    if not os.path.isdir(os.path.join(srcDir,value)):
+                        msg="variable {}: Path {} is not a directory.".format(varname,os.path.join(srcDir,value))
+                        print("\t"+msg)
+                        errors.append(msg)
+                elif "vhost" in varname:
+                    # VHost folder, check if they exists
+                    if not os.path.isdir(value):
+                        msg="variable {}:\t Path {}\tis not a directory.".format(varname,value)
+                        print("\t"+msg)
+                        errors.append(msg)
+            else:
+                #print("No check implemented for {} = {}".format(varname,value))
+                pass
+        return errors
+
 
     def info(self):
         return "Template service module for generating config from the template stubs."

@@ -25,21 +25,21 @@ class SystemService(IService):
     """
     Check if the service environment is sane, and all option in config.ini are sane
     """
-    def check(self,config):
+    def check(self,config,services):
+        errors=list()
         # check if we can succesfully run shell commands
         com=['ls']
         exitcode,stdout,stderr = self.run_shell_commando(com)
         if exitcode != 0:
-            print("Error checking system service shell execution: "+' '.join(com))
+            msg="SystemService: Execution of simple \"ls\" command failed. This is very strange, we cannot use bash commands. The script will not work"
+            print("\t"+msg)
             print('exitcode={}\nstdout={}\nstderr={}'.format(exitcode,stdout,stderr))
-            return False
+            errors.append(msg)
         # check if config values are sane
         sys_ip=config['system']['ip']
-        if sys_ip==None:
-            raise Exception('config.ini has no "ip" setting in [system] section')
-        print("config.system.ip="+sys_ip)
+        #print("\tTODO: check config.system.ip="+sys_ip)
         #TODO: get interfaces ips and compare them to the config
-        return True
+        return errors
 
     def info(self):
         return "System service module for running shell commandos."
@@ -56,14 +56,14 @@ class SystemService(IService):
     """
     def run_shell_commando(self,commandArr):
         try:
-            print(" Running shell command: "+' '.join(commandArr))
+            print("\trunning shell command: "+' '.join(commandArr))
             with subprocess.Popen([' '.join(commandArr)],stdout=subprocess.PIPE,stdin=subprocess.PIPE,stderr=subprocess.PIPE, shell=True, universal_newlines=True) as proc:
                 resultStdout, resultStderr = proc.communicate()
                 exitcode=proc.returncode
             return (exitcode,resultStdout,resultStderr)
         except:
             e = sys.exc_info()[0]
-            print("An error happend while executing "+' '.join(commandArr))
+            print("\tan error happend while executing "+' '.join(commandArr))
             print(e)
             return (1,None,None)
 
@@ -227,3 +227,15 @@ class SystemService(IService):
             else:
                 print("\nWarning: IP of domain " + domain + " was not found. DNS says it does not exist.\n")
             return False
+
+    """
+    Download the letsencrypt client
+    """
+    def downloadLetsEncryptClient(self,sam_dir):
+        install_dir=os.path.join(sam_dir,"scripts","letsencrypt")
+        if os.path.isdir(install_dir):
+            print("\tfound letsencrypt ACME client in "+install_dir)
+        exitcode,stdout,stderr = self.run_shell_commando(['git','clone','https://github.com/letsencrypt/letsencrypt.git',install_dir])
+        if not exitcode == 0:
+            print("\failed to download the letsencrypt client.\n{}\n{}",stdout,stderr)
+        print("\tdownload the letsencrypt ACME client to "+install_dir)

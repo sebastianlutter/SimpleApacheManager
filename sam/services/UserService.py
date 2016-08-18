@@ -19,8 +19,9 @@ class UserService(IService):
     def __init__(self):
         pass
 
-    def check(self,config):
-        pass
+    def check(self,config,services):
+        errors=list()
+        return errors
 
     def info(self):
         return "User service module for adding and removing user."

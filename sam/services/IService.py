@@ -16,7 +16,7 @@ class IService(ABC):
         pass
 
     @abstractmethod
-    def check(self,config):
+    def check(self,config,services):
         pass
 
     @abstractmethod

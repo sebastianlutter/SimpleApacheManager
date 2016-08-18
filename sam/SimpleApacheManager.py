@@ -62,6 +62,13 @@ class SimpleApacheManager():
                 configFound=True
         if not configFound:
             raise Exception("Could not find the file "+self.__config_file__)
+        try:
+            self.config['system']['folder_sam_source_dir']
+        except KeyError:
+            # identify the directory of SimpleApacheManager.py location
+            scriptdir=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+            print("Setting folder_sam_source_dir is not set in [system] section of config.ini, auto-disovery found: "+scriptdir)
+            self.config['system']['folder_sam_source_dir'] = scriptdir
         # find working os implementation
         if not self.findWorkingOSImpl():
             raise Exception("OperationSystem "+','.join(platform.linux_distribution())+" is not supported by SimpleApacheManager. Abort.")
@@ -127,8 +134,11 @@ class SimpleApacheManager():
             self.install()
             return
         elif args.command == 'check':
-            if not self.check():
-                print("ERROR: one or more checks failed. SimpleApacheManager is not operational.")
+            numErr=self.check()
+            if numErr>0:
+                print("\nOverall check had {} errors. You may have not installed SimpleApacheManager yet.\n".format(numErr))
+            else:
+                print("\nNo errors happend. Everything is well :)\n")
             return
         # execute the right Actions class
         for action_key in self.commands.keys():
@@ -175,25 +185,29 @@ class SimpleApacheManager():
     Run check on all services and os worker
     """
     def check(self):
-        err=False
         self.printConfig()
+        allerrors=list()
         # run os check
         print("\ncheck OS module:")
         print('  '+self.__os_service__.name() + "\t: " + self.__os_service__.info())
         if not self.__os_service__.checkStatus(self.config):
-            if self.args.v:
-                print("\tOS check failed for "+self.__os_service__.name())
-            err=True
+            msg="OS check failed for "+self.__os_service__.name()
+            print("\t"+msg)
+            allerrors.append(msg)
         else:
             print("\tcheck OK for "+self.__os_service__.name())
-        print("\ncheck service modules:")
+        print("\n\ncheck service modules:")
         for service_key in self.services.keys():
             service=self.services[service_key]
-            print('  '+service_key + "\t: " + service.info())
-            if not service.check(self.config):
-                err=True
-        print()
-        return not err
+            print('\ncheck  '+service_key + " service\t: " + service.info())
+            errors=service.check(self.config,self.services)
+            allerrors.extend(errors)
+            if len(errors) > 0:
+                print("FAILED: service "+service_key+" check ended with errors.")
+            else:
+                print("SUCCESS: service "+service_key+" check ok.")
+        numErr=len(allerrors)
+        return numErr
 
     """
     Install SimpleApacheManager on the host system. Do pre-install check before.
