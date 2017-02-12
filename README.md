@@ -7,7 +7,7 @@ It is released and distributed via setuptools/PyPI/pip for Python 3. It runs on 
 
 Alpha status. All main functions are implemented, you can add and remove vhosts and subdomains. Check function is useless at the moment. Not well tested yet, but has been build with non desctructive behavior (it should not delete anything without doing a backup, and it stops if somethings goes wrong).
 
-Documentation as well as speaking error messages are the next steps. Also using letsencrypt instead of self signed certificated for each vhost and subdomain is planned.
+Documentation as well as speaking error messages are the next steps planned. Also using letsencrypt instead of self signed certificated for each vhost and subdomain is planned.
 
 
 ## Install
